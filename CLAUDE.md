@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Concepto antes que código.** Ante una duda, primero explicar el problema y el concepto de Nest/TypeORM involucrado (con referencia a la doc oficial), luego opciones con tradeoffs. Dar código solo si el usuario lo pide explícitamente, y aun así explicarlo línea por línea: la regla 3 del plan es "no entra código que no pueda explicar".
 - **Seguir [Plan_TFM.md](Plan_TFM.md) en orden.** Es la fuente de verdad del alcance y del paso a paso semanal. Si una pregunta se va fuera del alcance o adelanta semanas, señalarlo; las ideas nuevas van a la sección "Después del TFM".
 - Los primeros tests (unitario y e2e) los escribe el usuario a mano; no generarlos.
+- Las explicaciones de conceptos se guardan en `docs/aprendizaje/` (numeradas, una por tema) para retomarlas desde otra máquina. Revisarlas antes de explicar algo para no repetir ni contradecir.
 
 ## Comandos
 
