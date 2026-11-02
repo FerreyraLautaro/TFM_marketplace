@@ -79,3 +79,68 @@ La respuesta es `forRootAsync` + `inject` + `useFactory`, que es el siguiente pa
 1. ¿Qué diferencia hay entre `ConfigModule` (el módulo) y `ConfigService` (el provider)? ¿Cuál se importa y cuál se inyecta?
 2. ¿Por qué `validate` y no `validationSchema`?
 3. Si pongo `DB_PORT=5432` en el `.env`, ¿qué tipo de dato le llega a la función `validate`?
+
+### Respuestas (revisadas)
+
+1. **`ConfigModule` se importa, `ConfigService` se inyecta.** El módulo lee, valida y registra la configuración, y exporta el service. El service (`get()`) es lo que se pide en el constructor. Con `isGlobal: true` los demás módulos no necesitan importar `ConfigModule`, solo inyectar el service.
+2. **`validate` es una función agnóstica** (sirve zod, class-validator, etc.). `validationSchema` espera un schema de Joi y queda atado a esa librería. Lo que devuelve `validate` es lo que queda guardado como configuración.
+3. **Siempre `string`.** Por eso el schema convierte con `z.coerce.number()`.
+
+## 6. Lo que se resolvió
+
+### Error 1: `{ validateEnv }` no funciona
+
+`{ validateEnv }` es azúcar de `{ validateEnv: validateEnv }`: la **clave** es `validateEnv`. `ConfigModule` solo reconoce ciertas claves (`isGlobal`, `validate`, `envFilePath`...). Solución: `validate: validateEnv` (clave que Nest espera, valor = tu función).
+
+### Error 2: leer la config desde `TypeOrmModule`
+
+`forRoot({...})` evalúa su objeto al **cargar el archivo**, antes de que exista el contenedor de DI, así que no hay `ConfigService` disponible. Solución: `forRootAsync`, que entrega una receta a Nest para ejecutar cuando las dependencias ya están resueltas.
+
+### Código final (`app.module.ts`)
+
+```ts
+ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+TypeOrmModule.forRootAsync({
+  inject: [ConfigService],
+  useFactory: (config: ConfigService<Env, true>) => ({
+    type: 'postgres',
+    host: config.get('POSTGRES_HOST', { infer: true }),
+    port: config.get('POSTGRES_PORT', { infer: true }),
+    username: config.get('POSTGRES_USER', { infer: true }),
+    password: config.get('POSTGRES_PASSWORD', { infer: true }),
+    database: config.get('POSTGRES_DB', { infer: true }),
+    entities: [],
+    synchronize: true,
+  }),
+}),
+```
+
+### Paso a paso
+
+- **`inject: [ConfigService]`**: dependencias que Nest resuelve antes de ejecutar la fábrica. No hace falta `imports: [ConfigModule]` porque es global.
+- **`useFactory`**: Nest la ejecuta y le pasa las instancias **en el mismo orden que `inject`**. Devuelve el objeto de opciones que antes iba en `forRoot`.
+- **`ConfigService<Env, true>`**: `Env` es el tipo inferido del schema (`z.infer`), así `get` solo acepta claves válidas. El `true` (`WasValidated`) hace que `get` devuelva `string` y no `string | undefined`.
+- **`{ infer: true }`**: el tipo de retorno sale de `Env`. `POSTGRES_PORT` llega como `number`.
+
+### Trampa de `z.coerce.number()`
+
+`"abc"` da `NaN` y falla bien, pero `""` (variable vacía) se convierte en `0` y pasa. Para puertos conviene sumar `.int().positive()`.
+
+## 7. Índice de la doc de Nest para releer
+
+Base: https://docs.nestjs.com
+
+| Tema | Dónde | Para qué |
+|---|---|---|
+| Módulos y `isGlobal` | Overview → Modules → Global modules | Encapsulamiento y alcance de providers |
+| Providers e inyección | Overview → Providers | Cómo funciona el contenedor de DI |
+| Módulos dinámicos | Fundamentals → Dynamic modules | Por qué existen `forRoot` / `forRootAsync` |
+| Configuración | Techniques → Configuration | `ConfigModule`, `validate`, `ConfigService` |
+| `ConfigService` tipado | Techniques → Configuration → Custom getter / `infer` | `get` con tipos |
+| TypeORM async | Techniques → Database → Async configuration | `forRootAsync`, `inject`, `useFactory` |
+| Providers asíncronos | Fundamentals → Custom providers → Factory providers | Base conceptual de `useFactory` |
+
+## 8. Pendiente (siguiente paso del plan)
+
+- Mover el `forRootAsync` de TypeORM a su propio módulo (`src/config/` o `src/database/`) para dejar `AppModule` limpio.
+- Probar el fail fast: borrar `POSTGRES_DB` del `.env` y confirmar que la app no arranca.

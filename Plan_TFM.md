@@ -44,8 +44,8 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
 
 ## Semana 1 · Base (~12 h)
 
-- [ ] Repositorio público en GitHub
-- [ ] Nest + PostgreSQL en Docker + TypeORM + ConfigModule
+- [x] Repositorio público en GitHub
+- [x] Nest + PostgreSQL en Docker + TypeORM + ConfigModule
 - [ ] Esqueleto desplegado en Railway con `/health`
 - [ ] Users + auth: JWT, Passport, guards de rol, decorador `@CurrentUser()`
 - [ ] CRUD de productos por seller con DTOs y validación
