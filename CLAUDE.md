@@ -31,11 +31,11 @@ npm run test:e2e                # e2e (test/jest-e2e.json, *.e2e-spec.ts)
 
 ## Arquitectura y estado actual
 
-- NestJS 11 + TypeORM + PostgreSQL. Semana 1 del plan en curso: repo, config validada y `/health` listos; falta el deploy en Railway.
+- NestJS 11 + TypeORM + PostgreSQL. Semana 1 del plan en curso: repo, config validada, `/health` y deploy en Railway listos (`NODE_ENV` validada; `synchronize` solo fuera de producción, así que Users necesita migraciones antes de desplegarse). Siguiente: Users + auth.
 - Nest corre en el host (Windows) y Postgres en Docker: por eso `host: 'localhost'`. El nombre del contenedor/servicio solo resuelve si Nest también corre dentro de la red del compose.
 - La imagen `postgres:16` guarda los datos en `/var/lib/postgresql/data` (no en `/var/lib/postgresql`, que es la convención de Postgres 18+). `POSTGRES_DB` solo se aplica con el volumen vacío; sin él, la única base creada es `postgres`.
 - Estructura de módulos: `AppModule` solo compone `ConfigurationModule` (`src/config/`, `ConfigModule` global + schema zod en `env.schema.ts`), `DatabaseModule` (`src/database/`, `TypeOrmModule.forRootAsync` con `ConfigService<Env, true>`) y `HealthModule` (`src/health/`, `GET /health` con ping a la base vía Terminus; 200 ok, 503 si la base cae).
-- Deuda anotada: `synchronize: true` sigue activo (decidir antes de producción); el spec de `HealthController` se borró porque Jest no parsea `@nestjs/terminus` (retomar con el primer test unitario). Los saltos de línea se normalizan a LF con `.gitattributes` y `.prettierrc`.
+- Deuda anotada: faltan migraciones de TypeORM para producción (`synchronize` está apagado cuando `NODE_ENV=production`); el spec de `HealthController` se borró porque Jest no parsea `@nestjs/terminus` (retomar con el primer test unitario). Los saltos de línea se normalizan a LF con `.gitattributes` y `.prettierrc`.
 
 ### Arquitectura objetivo (de Plan_TFM.md)
 
