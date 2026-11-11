@@ -96,7 +96,9 @@ La respuesta es `forRootAsync` + `inject` + `useFactory`, que es el siguiente pa
 
 `forRoot({...})` evalúa su objeto al **cargar el archivo**, antes de que exista el contenedor de DI, así que no hay `ConfigService` disponible. Solución: `forRootAsync`, que entrega una receta a Nest para ejecutar cuando las dependencias ya están resueltas.
 
-### Código final (`app.module.ts`)
+### Código final
+
+Primera versión (todo junto, antes de separar en módulos):
 
 ```ts
 ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
@@ -140,7 +142,44 @@ Base: https://docs.nestjs.com
 | TypeORM async | Techniques → Database → Async configuration | `forRootAsync`, `inject`, `useFactory` |
 | Providers asíncronos | Fundamentals → Custom providers → Factory providers | Base conceptual de `useFactory` |
 
-## 8. Pendiente (siguiente paso del plan)
+## 8. Separación en módulos (estructura final)
 
-- Mover el `forRootAsync` de TypeORM a su propio módulo (`src/config/` o `src/database/`) para dejar `AppModule` limpio.
-- Probar el fail fast: borrar `POSTGRES_DB` del `.env` y confirmar que la app no arranca.
+```
+src/
+├── app.module.ts                 # raíz de composición: solo lista módulos
+├── config/
+│   ├── configuration.module.ts   # ConfigurationModule: ConfigModule.forRoot(...)
+│   └── env.schema.ts             # schema de zod + validateEnv + tipo Env
+└── database/
+    └── database.module.ts        # DatabaseModule: TypeOrmModule.forRootAsync(...)
+```
+
+`AppModule` queda con `imports: [ConfigurationModule, DatabaseModule]`.
+
+**Por qué separar:**
+- `AppModule` es la **raíz de composición**: su trabajo es decir qué módulos forman la app, no configurarlos. Si acumula detalles de cada módulo, se vuelve ilegible al sumar Auth, Products, Orders...
+- Cada módulo tiene **una sola responsabilidad**: uno sabe de variables de entorno, el otro de la conexión a la base.
+- El nombre de la clase coincide con el archivo (`ConfigurationModule` en `configuration.module.ts`) y no se confunde con el `ConfigModule` de Nest.
+- `DatabaseModule` no importa `ConfigurationModule`, pero **depende de él de forma implícita** porque es `isGlobal`. Si algún día deja de ser global, hay que importarlo explícitamente.
+
+## 9. `main.ts`: promesas flotantes
+
+El lint avisó `no-floating-promises` en `bootstrap();`. `bootstrap` es `async`, así que devuelve una `Promise`; si falla (config inválida, base caída, puerto ocupado) y nadie captura el rechazo, queda como `unhandledRejection`.
+
+Solución: capturar el error, loguearlo y **terminar con `process.exit(1)`**. El código de salida distinto de 0 le avisa a Docker o Railway que el arranque falló; sin él el proceso podría salir con código 0 ("todo bien") aunque haya fallado.
+
+```ts
+bootstrap().catch((error) => {
+  console.error('Failed to start the application', error);
+  process.exit(1);
+});
+```
+
+`void bootstrap()` también silencia el warning, pero solo lo oculta: los errores siguen sin manejarse.
+
+## 10. Verificado y deuda anotada
+
+- ✅ Fail fast probado: sin `POSTGRES_DB` la app no arranca y muestra el mensaje de zod.
+- ✅ `.env` está en `.gitignore` y existe `.env.example`.
+- ⚠️ `synchronize: true`: TypeORM modifica el esquema solo al arrancar. Está bien en local, pero en Railway puede alterar o borrar columnas sin avisar. Decidir en el ítem de despliegue: condicionarlo por entorno o pasar a migraciones.
+- ⚠️ `POSTGRES_PORT` usa `z.coerce.number().int()` sin `.positive()`: una variable vacía (`""`) se convierte en `0` y pasa la validación. Agregar `.positive()` en el schema.
