@@ -46,10 +46,10 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
 
 - [x] Repositorio público en GitHub
 - [x] Nest + PostgreSQL en Docker + TypeORM + ConfigModule
-- [ ] Esqueleto desplegado en Railway con `/health`
+- [x] Esqueleto desplegado en Railway con `/health`
   - [x] Endpoint `/health` con ping a la base (Terminus), probado 200/503
-  - [ ] Deploy en Railway (Postgres + variables de entorno + health check path)
-  - [ ] Decidir `synchronize: true` en producción (condicionar por entorno o migraciones)
+  - [x] Deploy en Railway (Postgres + variables de entorno + health check path), `/health` responde 200 en producción
+  - [x] `synchronize` solo fuera de producción (`NODE_ENV` validada con zod). **Prerrequisito de Users:** migraciones para producción
 - [ ] Users + auth: JWT, Passport, guards de rol, decorador `@CurrentUser()`
 - [ ] CRUD de productos por seller con DTOs y validación
 - [ ] Swagger configurado

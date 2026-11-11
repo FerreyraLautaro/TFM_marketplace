@@ -103,9 +103,41 @@ Base: https://docs.nestjs.com
 | Custom health indicator | Misma página | `attempt()`, `degraded()` |
 | Timeouts y caché | Misma página, "Timeouts and caching" | `withTimeout` |
 
-## 8. Pendiente
+## 8. Deploy en Railway
 
-- **Deploy en Railway** (siguiente del plan): Postgres de Railway, variables de entorno, y configurar el health check path en `/health`. Es la prueba de que `validateEnv` funciona fuera de tu máquina.
-- **`synchronize: true`**: decidir antes de producción si se condiciona por entorno o se pasa a migraciones. En Railway puede alterar o borrar columnas sin avisar.
+Pasos hechos: proyecto con servicio PostgreSQL, servicio de la app desde el repo de GitHub, variables de entorno, health check path `/health` en Settings y dominio público. Resultado: `GET /health` responde `200` con la base `up` (primer ping ~311 ms, por ser la primera conexión; el timeout es de 1000 ms).
+
+### Variables: los nombres tienen que coincidir con el schema
+
+El servicio Postgres de Railway expone `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` y `DATABASE_URL`. La app exige `POSTGRES_*`. Sin tocar código, en el servicio de la app se crean las variables `POSTGRES_*` con **referencias** al otro servicio:
+
+```
+NODE_ENV=production
+POSTGRES_HOST=${{Postgres.PGHOST}}
+POSTGRES_PORT=${{Postgres.PGPORT}}
+POSTGRES_USER=${{Postgres.PGUSER}}
+POSTGRES_PASSWORD=${{Postgres.PGPASSWORD}}
+POSTGRES_DB=${{Postgres.PGDATABASE}}
+```
+
+- `Postgres` es el nombre del servicio de la base en el canvas; si se renombra, cambia el prefijo.
+- Referenciar evita copiar secretos a mano y no se desactualiza si cambia la contraseña.
+- `DATABASE_URL` sobraba: la app no la lee, y como valor literal con la contraseña se desactualiza.
+- `PORT` no se define: Railway la inyecta y `main.ts` la lee.
+- El primer intento tenía nombres `DB_*` y un typo (`DB_USARNAME`). Con eso la app **no arranca**, y es el fail fast de `validateEnv` funcionando como se diseñó.
+- Cuidado con las capturas del panel: pueden mostrar la contraseña completa.
+
+## 9. `synchronize` por entorno
+
+Decisión: `synchronize` activo solo fuera de producción.
+
+- `NODE_ENV` se valida en el schema con `z.enum(['development', 'production', 'test'])` y default `development`. Un valor con typo hace fallar el arranque en vez de caer silenciosamente en modo desarrollo.
+- En `DatabaseModule`: `synchronize: config.get('NODE_ENV', { infer: true }) !== 'production'`.
+- Bug del camino: la primera versión era `!= "production" ? false : true`, que estaba **invertida** (activaba `synchronize` en producción y lo apagaba en local). Además, `cond ? false : true` es una señal de que sobra el ternario: la comparación ya es un booleano. Y conviene `!==` (comparación estricta).
+- Consecuencia: en Railway ya no se crean tablas solas. Hoy no hay entidades, pero al agregar `User` hacen falta **migraciones** para producción.
+
+## 10. Pendiente
+
+- **Migraciones de TypeORM** (prerrequisito de Users): cómo se generan, cómo se ejecutan en el deploy de Railway.
 - **Saltos de línea (LF/CRLF)** (resuelto): con `core.autocrlf=true` en Windows y sin `.gitattributes` ni `endOfLine` en `.prettierrc`, Git marcaba archivos como modificados sin diferencias reales (caché del índice). Se agregó `.gitattributes` con `* text=auto eol=lf` y `"endOfLine": "lf"` en `.prettierrc`, en un commit aparte. Si el editor sigue mostrando marcas, recargar la ventana.
 - **Primer test unitario escrito a mano** (ítem del plan) y configuración de Jest para módulos ESM de `node_modules`.

@@ -14,7 +14,7 @@ import { Env } from '../config/env.schema.js';
         password: config.get('POSTGRES_PASSWORD', { infer: true }),
         database: config.get('POSTGRES_DB', { infer: true }),
         entities: [],
-        synchronize: true,
+        synchronize: config.get('NODE_ENV', { infer: true }) !== 'production',
       }),
     }),
   ],
