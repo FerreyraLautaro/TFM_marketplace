@@ -84,6 +84,8 @@ TypeORM transactions, Testing (e2e).
 
 ## Semana 3 · IA (~12 h)
 
+> **Modo de trabajo de esta semana:** más participación mía. Cada decisión de diseño (proveedor, prompt, esquema de salida, manejo de errores, costos y límites) se discute antes de implementar, y el código se revisa pensando en cómo funcionaría en un entorno real: reintentos, timeouts, cuotas de la API, costo por llamada, observabilidad y qué pasa cuando el LLM falla o devuelve algo inválido.
+
 - [ ] API key de Gemini y límites confirmados en la consola
 - [ ] `LlmProvider` + `GeminiLlmProvider` con salida estructurada
 - [ ] Taxonomía de categorías y semilla de marcas
@@ -97,18 +99,18 @@ endpoint de normalización funciona.
 
 ## Modo reducido · Ya en Cencosud (4–6 h/semana)
 
-- [ ] Mercado Pago sandbox detrás de `PaymentProvider`
-- [ ] Webhook idempotente que pasa la orden a PAID
-- [ ] Despliegue final en Railway con variables de entorno y seeds
-- [ ] README completo (ver checklist de entrega)
-- [ ] Slides
-- [ ] Video con captura de pantalla
+- [x] ~~Mercado Pago sandbox detrás de `PaymentProvider`~~ → descartado: se mantiene `FakePaymentProvider` (decisión 2026-11-20)
+- [ ] Webhook idempotente **simulado** que pasa la orden a PAID (mismo `PaymentProvider`; un reintento del mismo evento no cambia nada)
+- [ ] Despliegue en Railway con variables de entorno y seeds (se va completando en cada PR; seeds con un BUYER, un SELLER y comisiones de 5/10/15%)
+- [ ] README completo (ver checklist de entrega; se va completando)
+- [ ] Slides de presentación (hechas con Claude)
+- [ ] Demo interactiva: página HTML/SPA (artifact de Claude) que muestra los flujos principales y permite elegir qué respuesta llega en cada paso (éxito, 400, 403, 404, 409), como alternativa más clara que Swagger
+- [ ] Video con captura de pantalla, filmado por mí usando los endpoints (guion preparado con Claude)
 - [ ] Formulario de entrega enviado
 
 **Terminado cuando:** el formulario de entrega está enviado.
 
-> **Si falta tiempo:** `FakePaymentProvider` en lugar de Mercado Pago. Nunca se
-> recorta el núcleo del marketplace ni la parte de IA. El onboarding tiene prioridad.
+> **Prioridad:** nunca se recorta el núcleo del marketplace ni la parte de IA. El onboarding tiene prioridad.
 
 ---
 
