@@ -23,6 +23,7 @@ describe('AuthService', () => {
       email: 'seller@example.com',
       passwordHash: await bcrypt.hash(password, 4),
       role: UserRole.SELLER,
+      commissionRate: 10,
       createdAt: new Date(),
     };
   }

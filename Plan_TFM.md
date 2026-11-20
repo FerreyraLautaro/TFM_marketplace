@@ -68,12 +68,12 @@ Configuration, Authentication, Authorization, Custom decorators, Testing, OpenAP
 
 ## Semana 2 · Núcleo del marketplace (~12 h)
 
-- [ ] Órdenes con división automática en suborders por seller
+- [x] Órdenes con división automática en suborders por seller (foto de nombre y precio en cada ítem)
 - [ ] Máquinas de estado de Order y SubOrder
-- [ ] Comisión por suborder
+- [x] Comisión por suborder (porcentaje fijo por seller, 10% por defecto, copiado en la suborder)
 - [ ] `EventPublisher` en memoria + eventos por cambio de estado
 - [ ] Autorización por recurso (seller solo ve y avanza sus suborders)
-- [ ] Transacción al crear la orden
+- [x] Transacción al crear la orden
 - [ ] **Primer test e2e escrito a mano** (supertest); el resto con IA desde mis casos
 
 **Terminado cuando:** una orden con productos de 2 sellers se divide, cambia de
@@ -162,6 +162,11 @@ endpoint de normalización funciona.
 - **Login con el mismo error para email inexistente y contraseña incorrecta.** Evita revelar qué emails están registrados.
 - **Regla de propiedad de productos en el servicio, no en el controller.** El seller solo modifica lo suyo (403); la regla queda en un lugar testeable sin HTTP.
 - **Precio `numeric(12,2)` expuesto como número.** `numeric` evita errores de redondeo de `float`; un transformer lo convierte porque Postgres lo devuelve como string.
+- **La orden es una foto.** Cada ítem copia nombre, precio unitario, cantidad y subtotal; el porcentaje y el monto de comisión se copian en la suborder. Cambios posteriores de precio o de comisión no alteran órdenes existentes; si se borra un producto, el ítem queda con `productId` en null y conserva sus datos.
+- **Montos en centavos enteros.** Sumas y porcentajes se calculan en enteros para no acumular errores de punto flotante.
+- **Comisión fija por seller (10% por defecto, otros valores por seeds).** No hay panel de administración y el seller no puede elegirla al registrarse.
+- **Recursos privados ajenos devuelven 404, no 403.** En órdenes y suborders no se revela que el recurso existe; en productos (públicos) se usa 403.
+- **Usuarios con órdenes no se pueden borrar.** La FK sin cascada preserva el historial de compras y ventas.
 
 ## Después del TFM
 
