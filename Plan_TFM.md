@@ -54,8 +54,8 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
   - [x] Entidad `User` mínima (`id` uuid, `email` único, `createdAt`) registrada en `entities`
   - [x] `buildDataSourceOptions(env)` compartida entre la app y el CLI (`src/database/data-source.options.ts`)
   - [x] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts `migration:generate/run/revert/show`, migración `CreateUser` probada con run/revert en local, y `migrationsRun` al arrancar (probado desde `dist`). Pendiente confirmar en Railway (extensión `uuid-ossp`)
-  - [ ] Ampliar `User` (contraseña y rol) con una segunda migración
-  - [ ] JWT, Passport, guards de rol y `@CurrentUser()`
+  - [x] Ampliar `User` (contraseña y rol) con una segunda migración
+  - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
 - [ ] CRUD de productos por seller con DTOs y validación
 - [ ] Swagger configurado
 - [ ] **Primer test unitario escrito a mano**
