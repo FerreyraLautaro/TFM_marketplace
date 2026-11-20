@@ -53,7 +53,7 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
 - [ ] Users + auth: JWT, Passport, guards de rol, decorador `@CurrentUser()`
   - [x] Entidad `User` mínima (`id` uuid, `email` único, `createdAt`) registrada en `entities`
   - [x] `buildDataSourceOptions(env)` compartida entre la app y el CLI (`src/database/data-source.options.ts`)
-  - [ ] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts de `package.json`, generar/correr/revertir la migración de `user` en local, y ejecutarla en Railway (riesgo: permisos de la extensión del uuid)
+  - [x] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts `migration:generate/run/revert/show`, migración `CreateUser` probada con run/revert en local, y `migrationsRun` al arrancar (probado desde `dist`). Pendiente confirmar en Railway (extensión `uuid-ossp`)
   - [ ] Ampliar `User` (contraseña y rol) con una segunda migración
   - [ ] JWT, Passport, guards de rol y `@CurrentUser()`
 - [ ] CRUD de productos por seller con DTOs y validación
