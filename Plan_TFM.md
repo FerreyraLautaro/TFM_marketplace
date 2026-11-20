@@ -6,9 +6,9 @@
 ## Reglas
 
 1. Un proyecto con cierre a la vez: este. Ideas nuevas → sección "Después del TFM".
-2. El núcleo lo escribo yo: leo la documentación de Nest, implemento a mano, pido revisión.
-3. No entra código que no pueda explicar línea por línea.
-4. Primer test unitario y primer e2e a mano; el resto con IA a partir de mis casos.
+2. El código lo implementa Claude (IA); yo defino el alcance, tomo las decisiones de diseño y reviso y mergeo cada PR.
+3. No entra una decisión que no pueda fundamentar: cada elección queda registrada en "Decisiones".
+4. Los tests (unitarios y e2e) los escribe Claude a partir de los casos del plan.
 5. Cierre semanal: revisar contra el criterio de "terminado" y anotar en la Bitácora.
 
 ## Alcance
@@ -58,7 +58,7 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
   - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
 - [x] CRUD de productos por seller con DTOs y validación (lectura pública; alta, edición y baja solo por el seller dueño)
 - [x] Swagger configurado (`/docs`, Bearer auth, DTOs documentados con el plugin del CLI)
-- [ ] **Primer test unitario escrito a mano**
+- [x] Tests unitarios (escritos por Claude): auth, users, guard de roles y productos, 18 tests
 
 **Terminado cuando:** se registran usuarios con rol, un seller crea y edita sus
 productos con validación, hay tests unitarios y el esqueleto está desplegado.
@@ -69,12 +69,12 @@ Configuration, Authentication, Authorization, Custom decorators, Testing, OpenAP
 ## Semana 2 · Núcleo del marketplace (~12 h)
 
 - [x] Órdenes con división automática en suborders por seller (foto de nombre y precio en cada ítem)
-- [ ] Máquinas de estado de Order y SubOrder
+- [x] Máquinas de estado de Order y SubOrder (transiciones atómicas; 409 si el estado cambió)
 - [x] Comisión por suborder (porcentaje fijo por seller, 10% por defecto, copiado en la suborder)
-- [ ] `EventPublisher` en memoria + eventos por cambio de estado
-- [ ] Autorización por recurso (seller solo ve y avanza sus suborders)
+- [x] `EventPublisher` en memoria + eventos por cambio de estado (publicados después del commit)
+- [x] Autorización por recurso (seller solo ve y avanza sus suborders)
 - [x] Transacción al crear la orden
-- [ ] **Primer test e2e escrito a mano** (supertest); el resto con IA desde mis casos
+- [ ] Tests e2e del flujo principal con supertest (escritos por Claude)
 
 **Terminado cuando:** una orden con productos de 2 sellers se divide, cambia de
 estado y emite eventos, con tests e2e del flujo principal.
@@ -167,6 +167,11 @@ endpoint de normalización funciona.
 - **Comisión fija por seller (10% por defecto, otros valores por seeds).** No hay panel de administración y el seller no puede elegirla al registrarse.
 - **Recursos privados ajenos devuelven 404, no 403.** En órdenes y suborders no se revela que el recurso existe; en productos (públicos) se usa 403.
 - **Usuarios con órdenes no se pueden borrar.** La FK sin cascada preserva el historial de compras y ventas.
+- **Transiciones de estado con compare-and-set.** El UPDATE solo aplica si el estado sigue siendo el validado (`WHERE id = ? AND status = ?`); si otro request ganó, 409. Las tablas de transiciones son funciones puras testeadas par por par.
+- **La orden se bloquea al derivar su estado.** Con READ COMMITTED, dos sellers cerrando sus últimas suborders a la vez podían no verse entre sí y dejar la orden en PAID; el lock de la orden lo serializa.
+- **Eventos publicados después del commit.** Ningún suscriptor ve un cambio que después se revierte. Un handler que falla se loguea y no rompe el request.
+- **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago será otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
+- **Solo se aceptan suborders de órdenes pagadas.**
 
 ## Después del TFM
 
