@@ -6,9 +6,9 @@
 ## Reglas
 
 1. Un proyecto con cierre a la vez: este. Ideas nuevas → sección "Después del TFM".
-2. El núcleo lo escribo yo: leo la documentación de Nest, implemento a mano, pido revisión.
-3. No entra código que no pueda explicar línea por línea.
-4. Primer test unitario y primer e2e a mano; el resto con IA a partir de mis casos.
+2. El código lo implementa Claude (IA); yo defino el alcance, tomo las decisiones de diseño y reviso y mergeo cada PR.
+3. No entra una decisión que no pueda fundamentar: cada elección queda registrada en "Decisiones".
+4. Los tests (unitarios y e2e) los escribe Claude a partir de los casos del plan.
 5. Cierre semanal: revisar contra el criterio de "terminado" y anotar en la Bitácora.
 
 ## Alcance
@@ -58,7 +58,7 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
   - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
 - [x] CRUD de productos por seller con DTOs y validación (lectura pública; alta, edición y baja solo por el seller dueño)
 - [x] Swagger configurado (`/docs`, Bearer auth, DTOs documentados con el plugin del CLI)
-- [ ] **Primer test unitario escrito a mano**
+- [x] Tests unitarios (escritos por Claude): auth, users, guard de roles y productos, 18 tests
 
 **Terminado cuando:** se registran usuarios con rol, un seller crea y edita sus
 productos con validación, hay tests unitarios y el esqueleto está desplegado.
@@ -74,7 +74,7 @@ Configuration, Authentication, Authorization, Custom decorators, Testing, OpenAP
 - [ ] `EventPublisher` en memoria + eventos por cambio de estado
 - [ ] Autorización por recurso (seller solo ve y avanza sus suborders)
 - [ ] Transacción al crear la orden
-- [ ] **Primer test e2e escrito a mano** (supertest); el resto con IA desde mis casos
+- [ ] Tests e2e del flujo principal con supertest (escritos por Claude)
 
 **Terminado cuando:** una orden con productos de 2 sellers se divide, cambia de
 estado y emite eventos, con tests e2e del flujo principal.
