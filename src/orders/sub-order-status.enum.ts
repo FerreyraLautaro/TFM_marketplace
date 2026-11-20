@@ -1,0 +1,7 @@
+export enum SubOrderStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}

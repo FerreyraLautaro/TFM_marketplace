@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { numericTransformer } from '../database/numeric.transformer';
 import { User } from '../users/user.entity';
 
 @Entity()
@@ -21,15 +22,11 @@ export class Product {
   @Column({ type: 'text', nullable: true })
   description!: string | null;
 
-  // Postgres returns numeric as a string to avoid precision loss; two decimals fit safely in a JS number.
   @Column({
     type: 'numeric',
     precision: 12,
     scale: 2,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string) => parseFloat(value),
-    },
+    transformer: numericTransformer,
   })
   price!: number;
 

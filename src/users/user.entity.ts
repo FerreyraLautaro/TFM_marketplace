@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { numericTransformer } from '../database/numeric.transformer';
 import { UserRole } from './user-role.enum';
 
 @Entity()
@@ -20,6 +21,16 @@ export class User {
 
   @Column({ type: 'enum', enum: UserRole, enumName: 'user_role_enum' })
   role!: UserRole;
+
+  // Percentage the marketplace keeps from each sale; copied into suborders at purchase time.
+  @Column({
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    default: 10,
+    transformer: numericTransformer,
+  })
+  commissionRate!: number;
 
   @CreateDateColumn()
   createdAt!: Date;
