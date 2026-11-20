@@ -25,18 +25,19 @@ npm run format                  # prettier
 npm test                        # unit (jest, rootDir=src, *.spec.ts)
 npm test -- app.controller      # un solo archivo de test (filtra por path)
 npm test -- -t "nombre del test" # un solo test por nombre
-npm run test:e2e                # e2e (test/jest-e2e.json, *.e2e-spec.ts)
+npm run test:e2e                # e2e (test/jest-e2e.json, *.e2e-spec.ts) contra la base marketplace_test; requiere Docker arriba
 ```
 
 ## Arquitectura y estado actual
 
-- NestJS 11 + TypeORM + PostgreSQL. **Semana 1 cerrada** (pendiente de merge de PRs): config validada, `/health`, deploy en Railway, migraciones, users + auth JWT con roles, CRUD de productos por seller, Swagger en `/docs`. Siguiente: Semana 2 (órdenes y suborders).
+- NestJS 11 + TypeORM + PostgreSQL. **Semanas 1 y 2 cerradas**: config, `/health`, Railway, migraciones, auth JWT con roles, productos, Swagger, órdenes con suborders, máquinas de estado, eventos en memoria y pago simulado. Siguiente: Semana 3 (normalizador con Gemini).
 - Nest corre en el host (Windows) y Postgres en Docker: por eso `host: 'localhost'`. El nombre del contenedor/servicio solo resuelve si Nest también corre dentro de la red del compose.
 - La imagen `postgres:16` guarda los datos en `/var/lib/postgresql/data` (no en `/var/lib/postgresql`, que es la convención de Postgres 18+). `POSTGRES_DB` solo se aplica con el volumen vacío; sin él, la única base creada es `postgres`.
 - Módulos: `ConfigurationModule` (`src/config/`, zod en `env.schema.ts`, incluye `JWT_SECRET` y `JWT_EXPIRES_IN`), `DatabaseModule` (`src/database/`), `HealthModule` (`GET /health`, Terminus), `UsersModule` (`src/users/`, roles `BUYER`/`SELLER`), `AuthModule` (`src/auth/`: register/login/me, `JwtAuthGuard`, `@Roles()` + `RolesGuard` que va después de `JwtAuthGuard`, `@CurrentUser()`), `ProductsModule` (`src/products/`, lectura pública, escritura solo del seller dueño; la regla de propiedad vive en el servicio).
-- Base de datos: `synchronize: false` siempre. Opciones en `buildDataSourceOptions(env)` (`src/database/data-source.options.ts`), compartidas por la app y el CLI (`src/database/data-source.ts`). Entidades en lista explícita: **toda entidad nueva se agrega ahí**. Migraciones en `src/database/migrations/`, se generan con `npm run migration:generate -- src/database/migrations/<Nombre>` y la app las aplica al arrancar (`migrationsRun`). `migration:generate` agrega un drop/recreate espurio de `user_role_enum`: revisar y borrarlo de cada migración generada.
+- Base de datos: `synchronize: false` siempre. Opciones en `buildDataSourceOptions(env)` (`src/database/data-source.options.ts`), compartidas por la app y el CLI (`src/database/data-source.ts`). Entidades en lista explícita: **toda entidad nueva se agrega ahí**. Migraciones en `src/database/migrations/` y **listadas en `src/database/migrations/index.ts` (agregar cada migración nueva ahí)**; se generan con `npm run migration:generate -- src/database/migrations/<Nombre>` y la app las aplica al arrancar (`migrationsRun`). `migration:generate` agrega un drop/recreate espurio de `user_role_enum`: revisar y borrarlo de cada migración generada (pasa con todos los enums: `user_role_enum`, `order_status_enum`, `sub_order_status_enum`).
 - Imports relativos sin extensión `.js` (el proyecto compila a CommonJS; ts-node y Jest no los resuelven).
 - Tests: los paquetes `@nestjs/*` v12 son ESM; Jest los transforma con `@swc/jest` (ver `transformIgnorePatterns` en `package.json`). `@nestjs/swagger` está en la línea 11 porque la 12 exige Nest 12.
+- Órdenes (`src/orders/`): Order → SubOrder por seller → OrderItem con foto de precio; comisión copiada en la suborder; montos en centavos (`money.ts`). Transiciones con compare-and-set (`status-transition.ts`) y tablas puras (`*-status.machine.ts`); la orden se bloquea al derivar su estado. Eventos vía `EVENT_PUBLISHER` (`src/events/`), publicados después del commit. Pago vía `PAYMENT_PROVIDER` (`src/payments/`, hoy `FakePaymentProvider`).
 - Railway: `railway.json` fija build, start (`npm run start:prod`) y health check (`/health`). Variables: `NODE_ENV`, `POSTGRES_*` (referencias al servicio Postgres) y `JWT_SECRET`.
 - Deuda anotada: registro concurrente con el mismo email da 500 en vez de 409; el spec de `HealthController` se borró (probablemente ya se puede recuperar con `@swc/jest`). Saltos de línea normalizados a LF.
 
