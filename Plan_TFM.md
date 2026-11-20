@@ -74,7 +74,7 @@ Configuration, Authentication, Authorization, Custom decorators, Testing, OpenAP
 - [x] `EventPublisher` en memoria + eventos por cambio de estado (publicados después del commit)
 - [x] Autorización por recurso (seller solo ve y avanza sus suborders)
 - [x] Transacción al crear la orden
-- [ ] Tests e2e del flujo principal con supertest (escritos por Claude)
+- [x] Tests e2e del flujo principal con supertest (escritos por Claude): auth, productos y flujo completo de órdenes contra una base `marketplace_test` aislada
 
 **Terminado cuando:** una orden con productos de 2 sellers se divide, cambia de
 estado y emite eventos, con tests e2e del flujo principal.
@@ -148,6 +148,11 @@ endpoint de normalización funciona.
 - Bloqueos / dudas: los paquetes `@nestjs/*` v12 son ESM y Jest no los cargaba (se resolvió con `@swc/jest`); `@nestjs/swagger` 12 exige Nest 12, se usa la línea 11.
 - Próximo paso: Semana 2 (órdenes con suborders por seller).
 
+### 2026-11-20 · Semana 2
+- Hecho: órdenes divididas en suborders por seller con foto de precios, comisión por seller, máquinas de estado con transiciones atómicas, eventos en memoria, pago simulado (`FakePaymentProvider`), autorización por recurso. 115 tests unitarios y 16 e2e.
+- Bloqueos / dudas: el glob de migraciones fallaba en Windows por la mayúscula de la unidad (`c:` vs `C:`); se reemplazó por una lista explícita.
+- Próximo paso: Semana 3 (normalizador de catálogo con Gemini).
+
 ## Decisiones
 
 <!-- Decisiones de diseño tomadas en el camino y su motivo. Sirven para el video y las slides. -->
@@ -172,6 +177,8 @@ endpoint de normalización funciona.
 - **Eventos publicados después del commit.** Ningún suscriptor ve un cambio que después se revierte. Un handler que falla se loguea y no rompe el request.
 - **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago será otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
 - **Solo se aceptan suborders de órdenes pagadas.**
+- **Migraciones en lista explícita, como las entidades.** Un glob de archivos dependía de rutas (mayúsculas de unidad en Windows, `.d.ts` en `dist`); la lista funciona igual en local, tests y Railway.
+- **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM
 

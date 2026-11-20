@@ -1,5 +1,6 @@
 import { DataSourceOptions } from 'typeorm';
 import { Env } from '../config/env.schema';
+import { migrations } from './migrations';
 import { OrderItem } from '../orders/order-item.entity';
 import { Order } from '../orders/order.entity';
 import { SubOrder } from '../orders/sub-order.entity';
@@ -24,11 +25,7 @@ export function buildDataSourceOptions(env: DatabaseEnv): DataSourceOptions {
     password: env.POSTGRES_PASSWORD,
     database: env.POSTGRES_DB,
     entities: [User, Product, Order, SubOrder, OrderItem],
-    // Only .ts when running from source (CLI via ts-node) and only .js from dist,
-    // so the compiled .d.ts files are never loaded as migrations.
-    migrations: [
-      `${__dirname}/migrations/*.${__filename.endsWith('.ts') ? 'ts' : 'js'}`,
-    ],
+    migrations,
     synchronize: false,
   };
 }
