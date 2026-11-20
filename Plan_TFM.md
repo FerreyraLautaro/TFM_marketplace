@@ -49,8 +49,13 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
 - [x] Esqueleto desplegado en Railway con `/health`
   - [x] Endpoint `/health` con ping a la base (Terminus), probado 200/503
   - [x] Deploy en Railway (Postgres + variables de entorno + health check path), `/health` responde 200 en producción
-  - [x] `synchronize` solo fuera de producción (`NODE_ENV` validada con zod). **Prerrequisito de Users:** migraciones para producción
+  - [x] `NODE_ENV` validada con zod; `synchronize` pasó a `false` en todos los entornos (el esquema solo cambia por migraciones)
 - [ ] Users + auth: JWT, Passport, guards de rol, decorador `@CurrentUser()`
+  - [x] Entidad `User` mínima (`id` uuid, `email` único, `createdAt`) registrada en `entities`
+  - [x] `buildDataSourceOptions(env)` compartida entre la app y el CLI (`src/database/data-source.options.ts`)
+  - [ ] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts de `package.json`, generar/correr/revertir la migración de `user` en local, y ejecutarla en Railway (riesgo: permisos de la extensión del uuid)
+  - [ ] Ampliar `User` (contraseña y rol) con una segunda migración
+  - [ ] JWT, Passport, guards de rol y `@CurrentUser()`
 - [ ] CRUD de productos por seller con DTOs y validación
 - [ ] Swagger configurado
 - [ ] **Primer test unitario escrito a mano**
