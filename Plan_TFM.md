@@ -56,7 +56,7 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
   - [x] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts `migration:generate/run/revert/show`, migración `CreateUser` probada con run/revert en local, y `migrationsRun` al arrancar (probado desde `dist`). Pendiente confirmar en Railway (extensión `uuid-ossp`)
   - [x] Ampliar `User` (contraseña y rol) con una segunda migración
   - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
-- [ ] CRUD de productos por seller con DTOs y validación
+- [x] CRUD de productos por seller con DTOs y validación (lectura pública; alta, edición y baja solo por el seller dueño)
 - [ ] Swagger configurado
 - [ ] **Primer test unitario escrito a mano**
 
