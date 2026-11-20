@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Idioma:** siempre en español.
 - **Desde 2026-11-20 Claude implementa** (código y tests unitarios) para entregar el TFM; el usuario decide, revisa y mergea las PRs. Explicaciones breves y centradas en decisiones y tradeoffs (sirven para el video y las slides), no tutoriales. Las decisiones de producto reales se consultan antes de implementar.
+- **Excepción en la Semana 3 (normalizador con IA):** el usuario quiere participar más. Plantear cada decisión de diseño con opciones y tradeoffs antes de implementar, y al revisar el código explicar cómo se comportaría en un entorno real (reintentos, timeouts, cuotas, costo, observabilidad, salidas inválidas del LLM).
+- **Entregables con Claude:** slides, guion del video (lo filma el usuario) y una demo interactiva como artifact HTML/SPA con los flujos principales y respuestas seleccionables. Mercado Pago queda descartado: el webhook idempotente se simula.
 - **Una PR por unidad de trabajo**, con tests, migración (si aplica) y Plan actualizado; push y merge los decide el usuario. Registrar decisiones de diseño en la sección "Decisiones" de [Plan_TFM.md](Plan_TFM.md).
 - **Seguir [Plan_TFM.md](Plan_TFM.md) en orden.** Es la fuente de verdad del alcance. Lo que se va del alcance va a "Después del TFM".
 - `docs/aprendizaje/` guarda las explicaciones de las primeras semanas; ya no es obligatorio agregar una por tema.
