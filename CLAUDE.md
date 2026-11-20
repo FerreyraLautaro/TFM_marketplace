@@ -5,11 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Cómo trabajamos en este repo
 
 - **Idioma:** siempre en español.
-- **El usuario escribe el código.** Claude actúa como mentor: responde preguntas, explica conceptos y revisa lo que el usuario implementa. No edita archivos de `src/` ni `test/` por iniciativa propia.
-- **Concepto antes que código.** Ante una duda, primero explicar el problema y el concepto de Nest/TypeORM involucrado (con referencia a la doc oficial), luego opciones con tradeoffs. Dar código solo si el usuario lo pide explícitamente, y aun así explicarlo línea por línea: la regla 3 del plan es "no entra código que no pueda explicar".
-- **Seguir [Plan_TFM.md](Plan_TFM.md) en orden.** Es la fuente de verdad del alcance y del paso a paso semanal. Si una pregunta se va fuera del alcance o adelanta semanas, señalarlo; las ideas nuevas van a la sección "Después del TFM".
-- Los primeros tests (unitario y e2e) los escribe el usuario a mano; no generarlos.
-- Las explicaciones de conceptos se guardan en `docs/aprendizaje/` (numeradas, una por tema) para retomarlas desde otra máquina. Revisarlas antes de explicar algo para no repetir ni contradecir.
+- **Desde 2026-11-20 Claude implementa** (código y tests unitarios) para entregar el TFM; el usuario decide, revisa y mergea las PRs. Explicaciones breves y centradas en decisiones y tradeoffs (sirven para el video y las slides), no tutoriales. Las decisiones de producto reales se consultan antes de implementar.
+- **Una PR por unidad de trabajo**, con tests, migración (si aplica) y Plan actualizado; push y merge los decide el usuario. Registrar decisiones de diseño en la sección "Decisiones" de [Plan_TFM.md](Plan_TFM.md).
+- **Seguir [Plan_TFM.md](Plan_TFM.md) en orden.** Es la fuente de verdad del alcance. Lo que se va del alcance va a "Después del TFM".
+- `docs/aprendizaje/` guarda las explicaciones de las primeras semanas; ya no es obligatorio agregar una por tema.
 
 ## Comandos
 
@@ -31,12 +30,15 @@ npm run test:e2e                # e2e (test/jest-e2e.json, *.e2e-spec.ts)
 
 ## Arquitectura y estado actual
 
-- NestJS 11 + TypeORM + PostgreSQL. Semana 1 del plan en curso: repo, config validada, `/health` y deploy en Railway listos (`NODE_ENV` validada; `synchronize` solo fuera de producción, así que Users necesita migraciones antes de desplegarse). Siguiente: Users + auth.
+- NestJS 11 + TypeORM + PostgreSQL. **Semana 1 cerrada** (pendiente de merge de PRs): config validada, `/health`, deploy en Railway, migraciones, users + auth JWT con roles, CRUD de productos por seller, Swagger en `/docs`. Siguiente: Semana 2 (órdenes y suborders).
 - Nest corre en el host (Windows) y Postgres en Docker: por eso `host: 'localhost'`. El nombre del contenedor/servicio solo resuelve si Nest también corre dentro de la red del compose.
 - La imagen `postgres:16` guarda los datos en `/var/lib/postgresql/data` (no en `/var/lib/postgresql`, que es la convención de Postgres 18+). `POSTGRES_DB` solo se aplica con el volumen vacío; sin él, la única base creada es `postgres`.
-- Estructura de módulos: `AppModule` solo compone `ConfigurationModule` (`src/config/`, `ConfigModule` global + schema zod en `env.schema.ts`), `DatabaseModule` (`src/database/`, `TypeOrmModule.forRootAsync` con `ConfigService<Env, true>`) y `HealthModule` (`src/health/`, `GET /health` con ping a la base vía Terminus; 200 ok, 503 si la base cae).
-- Base de datos: `synchronize` es `false` en todos los entornos. Las opciones de conexión se arman en `buildDataSourceOptions(env)` (`src/database/data-source.options.ts`), pensada para compartirse entre `DatabaseModule` y el futuro `data-source.ts` del CLI de migraciones. Entidades registradas con lista explícita (`entities: [User]`); las migraciones irán en `src/database/migrations/`. Estado: entidad `User` mínima creada; falta el `DataSource` del CLI, los scripts y la primera migración (ver Plan_TFM.md).
-- Deuda anotada: el spec de `HealthController` se borró porque Jest no parsea `@nestjs/terminus` (retomar con el primer test unitario). Los saltos de línea se normalizan a LF con `.gitattributes` y `.prettierrc`.
+- Módulos: `ConfigurationModule` (`src/config/`, zod en `env.schema.ts`, incluye `JWT_SECRET` y `JWT_EXPIRES_IN`), `DatabaseModule` (`src/database/`), `HealthModule` (`GET /health`, Terminus), `UsersModule` (`src/users/`, roles `BUYER`/`SELLER`), `AuthModule` (`src/auth/`: register/login/me, `JwtAuthGuard`, `@Roles()` + `RolesGuard` que va después de `JwtAuthGuard`, `@CurrentUser()`), `ProductsModule` (`src/products/`, lectura pública, escritura solo del seller dueño; la regla de propiedad vive en el servicio).
+- Base de datos: `synchronize: false` siempre. Opciones en `buildDataSourceOptions(env)` (`src/database/data-source.options.ts`), compartidas por la app y el CLI (`src/database/data-source.ts`). Entidades en lista explícita: **toda entidad nueva se agrega ahí**. Migraciones en `src/database/migrations/`, se generan con `npm run migration:generate -- src/database/migrations/<Nombre>` y la app las aplica al arrancar (`migrationsRun`). `migration:generate` agrega un drop/recreate espurio de `user_role_enum`: revisar y borrarlo de cada migración generada.
+- Imports relativos sin extensión `.js` (el proyecto compila a CommonJS; ts-node y Jest no los resuelven).
+- Tests: los paquetes `@nestjs/*` v12 son ESM; Jest los transforma con `@swc/jest` (ver `transformIgnorePatterns` en `package.json`). `@nestjs/swagger` está en la línea 11 porque la 12 exige Nest 12.
+- Railway: `railway.json` fija build, start (`npm run start:prod`) y health check (`/health`). Variables: `NODE_ENV`, `POSTGRES_*` (referencias al servicio Postgres) y `JWT_SECRET`.
+- Deuda anotada: registro concurrente con el mismo email da 500 en vez de 409; el spec de `HealthController` se borró (probablemente ya se puede recuperar con `@swc/jest`). Saltos de línea normalizados a LF.
 
 ### Arquitectura objetivo (de Plan_TFM.md)
 

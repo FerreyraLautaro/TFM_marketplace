@@ -57,7 +57,7 @@ precisión por campo y validez de esquema; reporte v1 vs v2.
   - [x] Ampliar `User` (contraseña y rol) con una segunda migración
   - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
 - [x] CRUD de productos por seller con DTOs y validación (lectura pública; alta, edición y baja solo por el seller dueño)
-- [ ] Swagger configurado
+- [x] Swagger configurado (`/docs`, Bearer auth, DTOs documentados con el plugin del CLI)
 - [ ] **Primer test unitario escrito a mano**
 
 **Terminado cuando:** se registran usuarios con rol, un seller crea y edita sus
@@ -142,9 +142,26 @@ endpoint de normalización funciona.
 - Próximo paso:
 -->
 
+### 2026-11-20 · Semana 1
+- Hecho: config validada con zod, `/health` con Terminus, deploy en Railway, migraciones de TypeORM, users + auth JWT con roles, CRUD de productos por seller, Swagger en `/docs`. 18 tests unitarios (auth, users, guard de roles, productos).
+- Cambio de modo: por carga laboral, la implementación pasa a la IA y yo decido y reviso las PRs. Prioridad: entregar.
+- Bloqueos / dudas: los paquetes `@nestjs/*` v12 son ESM y Jest no los cargaba (se resolvió con `@swc/jest`); `@nestjs/swagger` 12 exige Nest 12, se usa la línea 11.
+- Próximo paso: Semana 2 (órdenes con suborders por seller).
+
 ## Decisiones
 
 <!-- Decisiones de diseño tomadas en el camino y su motivo. Sirven para el video y las slides. -->
+
+- **Validación de entorno con zod al arrancar (fail fast).** Una variable faltante o inválida frena el arranque con un mensaje claro, en vez de fallar en medio de un request.
+- **Módulos separados (`ConfigurationModule`, `DatabaseModule`, `HealthModule`).** `AppModule` solo compone; cada módulo tiene una responsabilidad.
+- **Migraciones en vez de `synchronize`, en todos los entornos.** El esquema cambia solo con archivos revisables y versionados; lo que se prueba en local es lo que corre en producción. Se aplican solas al arrancar (`migrationsRun`): si fallan, el health check de Railway mantiene el deploy anterior.
+- **Opciones de conexión en una sola función (`buildDataSourceOptions`).** La comparten la app y el CLI de migraciones, para que la lista de entidades no se desincronice.
+- **IDs UUID.** Un id incremental en la URL permite enumerar recursos y estimar cuántos hay.
+- **Health check solo de dependencias propias (base de datos).** Un chequeo externo podría reiniciar la app sin que haya nada roto.
+- **JWT solo access token (1 h), bcryptjs.** Refresh tokens fuera de alcance; bcryptjs evita compilar código nativo en Windows y Railway.
+- **Login con el mismo error para email inexistente y contraseña incorrecta.** Evita revelar qué emails están registrados.
+- **Regla de propiedad de productos en el servicio, no en el controller.** El seller solo modifica lo suyo (403); la regla queda en un lugar testeable sin HTTP.
+- **Precio `numeric(12,2)` expuesto como número.** `numeric` evita errores de redondeo de `float`; un transformer lo convierte porque Postgres lo devuelve como string.
 
 ## Después del TFM
 
