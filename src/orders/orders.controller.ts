@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -45,5 +47,23 @@ export class OrdersController {
     @CurrentUser() user: AuthUser,
   ): Promise<Order> {
     return this.ordersService.findOneForBuyer(id, user.id);
+  }
+
+  @Post(':id/pay')
+  @HttpCode(HttpStatus.OK)
+  pay(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<Order> {
+    return this.ordersService.pay(id, user.id);
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<Order> {
+    return this.ordersService.cancel(id, user.id);
   }
 }

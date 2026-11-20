@@ -1,11 +1,15 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, EntityManager, FindOperator } from 'typeorm';
+import { EVENT_PUBLISHER } from '../events/event-publisher';
+import { PAYMENT_PROVIDER } from '../payments/payment-provider';
 import { Product } from '../products/product.entity';
 import { User } from '../users/user.entity';
+import { OrderStatus } from './order-status.enum';
 import { Order } from './order.entity';
 import { OrdersService } from './orders.service';
+import { SubOrderStatus } from './sub-order-status.enum';
 import { SubOrder } from './sub-order.entity';
 
 describe('OrdersService', () => {
@@ -38,21 +42,53 @@ describe('OrdersService', () => {
       Promise.resolve({ ...order, id: 'order-1' }),
     ),
     findOneOrFail: jest.fn(),
+    findOne: jest.fn(),
+    createQueryBuilder: jest.fn(),
+  };
+  // Records commits and publications in order, to prove events wait for the commit.
+  let timeline: string[];
+  let affected: number;
+  const queryBuilder = {
+    update: jest.fn<unknown, [unknown]>().mockReturnThis(),
+    set: jest.fn<unknown, [unknown]>().mockReturnThis(),
+    where: jest.fn<unknown, [unknown]>().mockReturnThis(),
+    execute: jest.fn(() => Promise.resolve({ affected })),
   };
   const dataSource = {
-    transaction: jest.fn((work: (m: EntityManager) => Promise<unknown>) =>
-      work(manager as unknown as EntityManager),
+    manager,
+    transaction: jest.fn(
+      async (work: (m: EntityManager) => Promise<unknown>) => {
+        const result = await work(manager as unknown as EntityManager);
+        timeline.push('commit');
+        return result;
+      },
     ),
   };
   const ordersRepository = { find: jest.fn(), findOne: jest.fn() };
+  const payments = {
+    charge: jest.fn(() => Promise.resolve({ reference: 'fake-ref' })),
+  };
+  const events = {
+    publish: jest.fn((event: { type: string }) => {
+      timeline.push(event.type);
+    }),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    timeline = [];
+    affected = 1;
+    manager.createQueryBuilder.mockReturnValue(queryBuilder);
+    manager.findOneOrFail.mockImplementation(() =>
+      Promise.resolve({ id: 'order-1', subOrders: [] }),
+    );
     const moduleRef = await Test.createTestingModule({
       providers: [
         OrdersService,
         { provide: DataSource, useValue: dataSource },
         { provide: getRepositoryToken(Order), useValue: ordersRepository },
+        { provide: PAYMENT_PROVIDER, useValue: payments },
+        { provide: EVENT_PUBLISHER, useValue: events },
       ],
     }).compile();
     service = moduleRef.get(OrdersService);
@@ -165,8 +201,6 @@ describe('OrdersService', () => {
     });
 
     it('runs every query inside one transaction', async () => {
-      manager.findOneOrFail.mockResolvedValue({ id: 'order-1' });
-
       const result = await service.create('buyer-1', {
         items: [{ productId: 'p-1', quantity: 1 }],
       });
@@ -178,8 +212,181 @@ describe('OrdersService', () => {
         Order,
         expect.objectContaining({ where: { id: 'order-1' } }),
       );
-      expect(result).toEqual({ id: 'order-1' });
+      expect(result).toEqual({ id: 'order-1', subOrders: [] });
     });
+
+    it('publishes OrderCreated only after the transaction commits', async () => {
+      manager.findOneOrFail.mockResolvedValue({
+        id: 'order-1',
+        buyerId: 'buyer-1',
+        total: 0.99,
+        subOrders: [{ id: 'sub-1' }],
+      });
+
+      await service.create('buyer-1', {
+        items: [{ productId: 'p-1', quantity: 1 }],
+      });
+
+      expect(timeline).toEqual(['commit', 'OrderCreated']);
+      expect(events.publish).toHaveBeenCalledWith({
+        type: 'OrderCreated',
+        orderId: 'order-1',
+        buyerId: 'buyer-1',
+        total: 0.99,
+        subOrderIds: ['sub-1'],
+      });
+    });
+
+    it('publishes nothing when the transaction fails', async () => {
+      await expect(
+        service.create('buyer-1', {
+          items: [{ productId: 'p-404', quantity: 1 }],
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(events.publish).not.toHaveBeenCalled();
+    });
+  });
+
+  function updates(): { entity: unknown; set: unknown; where: unknown }[] {
+    return queryBuilder.update.mock.calls.map(([entity], i) => ({
+      entity,
+      set: queryBuilder.set.mock.calls[i][0],
+      where: queryBuilder.where.mock.calls[i][0],
+    }));
+  }
+
+  describe('pay', () => {
+    let order: Order;
+
+    beforeEach(() => {
+      order = {
+        id: 'order-1',
+        buyerId: 'buyer-1',
+        status: OrderStatus.PENDING,
+        total: 12.5,
+      } as Order;
+      ordersRepository.findOne.mockImplementation(
+        ({ where }: { where: { id: string; buyerId: string } }) =>
+          Promise.resolve(
+            where.id === order.id && where.buyerId === order.buyerId
+              ? order
+              : null,
+          ),
+      );
+    });
+
+    it('charges the order total, marks it paid and publishes OrderPaid', async () => {
+      await service.pay('order-1', 'buyer-1');
+
+      expect(payments.charge).toHaveBeenCalledWith({
+        orderId: 'order-1',
+        amount: 12.5,
+      });
+      expect(updates()).toEqual([
+        {
+          entity: Order,
+          set: { status: OrderStatus.PAID },
+          where: { id: 'order-1', status: OrderStatus.PENDING },
+        },
+      ]);
+      expect(events.publish).toHaveBeenCalledWith({
+        type: 'OrderPaid',
+        orderId: 'order-1',
+        paymentReference: 'fake-ref',
+      });
+    });
+
+    it('returns 404 for an order of another buyer', async () => {
+      await expect(service.pay('order-1', 'buyer-2')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(payments.charge).not.toHaveBeenCalled();
+    });
+
+    it.each([OrderStatus.PAID, OrderStatus.COMPLETED, OrderStatus.CANCELLED])(
+      'returns 409 without charging an order that is %s',
+      async (status) => {
+        order.status = status;
+
+        await expect(service.pay('order-1', 'buyer-1')).rejects.toBeInstanceOf(
+          ConflictException,
+        );
+        expect(payments.charge).not.toHaveBeenCalled();
+        expect(events.publish).not.toHaveBeenCalled();
+      },
+    );
+
+    it('returns 409 and publishes nothing when another request changed the order first', async () => {
+      affected = 0;
+
+      await expect(service.pay('order-1', 'buyer-1')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(events.publish).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancel', () => {
+    let order: Order;
+
+    beforeEach(() => {
+      order = {
+        id: 'order-1',
+        buyerId: 'buyer-1',
+        status: OrderStatus.PENDING,
+      } as Order;
+      manager.findOne.mockImplementation(
+        (
+          _entity: unknown,
+          { where }: { where: { id: string; buyerId: string } },
+        ) =>
+          Promise.resolve(
+            where.id === order.id && where.buyerId === order.buyerId
+              ? order
+              : null,
+          ),
+      );
+      ordersRepository.findOne.mockResolvedValue(order);
+    });
+
+    it('cancels the order and its pending suborders in one transaction', async () => {
+      await service.cancel('order-1', 'buyer-1');
+
+      expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+      expect(updates()).toEqual([
+        {
+          entity: Order,
+          set: { status: OrderStatus.CANCELLED },
+          where: { id: 'order-1', status: OrderStatus.PENDING },
+        },
+        {
+          entity: SubOrder,
+          set: { status: SubOrderStatus.CANCELLED },
+          where: { orderId: 'order-1', status: SubOrderStatus.PENDING },
+        },
+      ]);
+      expect(timeline).toEqual(['commit', 'OrderCancelled']);
+    });
+
+    it('returns 404 for an order of another buyer', async () => {
+      await expect(service.cancel('order-1', 'buyer-2')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(queryBuilder.execute).not.toHaveBeenCalled();
+    });
+
+    it.each([OrderStatus.PAID, OrderStatus.COMPLETED, OrderStatus.CANCELLED])(
+      'returns 409 for an order that is %s',
+      async (status) => {
+        order.status = status;
+
+        await expect(
+          service.cancel('order-1', 'buyer-1'),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(queryBuilder.execute).not.toHaveBeenCalled();
+        expect(events.publish).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('buyer read access', () => {
