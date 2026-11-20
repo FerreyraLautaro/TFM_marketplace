@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsNumber,
@@ -19,7 +20,9 @@ export class CreateProductDto {
   @MaxLength(2000)
   description?: string;
 
-  // Upper bound matches the numeric(12,2) column.
+  // Upper bound matches the numeric(12,2) column. The Swagger plugin maps
+  // @IsPositive() to minimum 1, so the real lower bound is documented here.
+  @ApiProperty({ minimum: 0, exclusiveMinimum: true, example: 1250.5 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   @Max(9999999999.99)
