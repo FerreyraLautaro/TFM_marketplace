@@ -86,8 +86,8 @@ TypeORM transactions, Testing (e2e).
 
 > **Modo de trabajo de esta semana:** más participación mía. Cada decisión de diseño (proveedor, prompt, esquema de salida, manejo de errores, costos y límites) se discute antes de implementar, y el código se revisa pensando en cómo funcionaría en un entorno real: reintentos, timeouts, cuotas de la API, costo por llamada, observabilidad y qué pasa cuando el LLM falla o devuelve algo inválido.
 
-- [ ] API key de Gemini y límites confirmados en la consola
-- [ ] `LlmProvider` + `GeminiLlmProvider` con salida estructurada
+- [x] API key de Gemini y límites confirmados en la consola (`gemini-3.1-flash-lite`: 15 RPM, 250K TPM, 500 RPD en el plan gratuito)
+- [x] `LlmProvider` + `GeminiLlmProvider` con salida estructurada (reintentos propios, timeout, limitador de ritmo)
 - [ ] Taxonomía de categorías y semilla de marcas
 - [ ] Normalizador con prompt v1 + registro en `NormalizationRun`
 - [ ] Golden dataset de 30–50 productos etiquetado a mano
@@ -180,6 +180,11 @@ endpoint de normalización funciona.
 - **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago será otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
 - **Solo se aceptan suborders de órdenes pagadas.**
 - **Migraciones en lista explícita, como las entidades.** Un glob de archivos dependía de rutas (mayúsculas de unidad en Windows, `.d.ts` en `dist`); la lista funciona igual en local, tests y Railway.
+- **Modelo `gemini-3.1-flash-lite`, configurable por variable (`GEMINI_MODEL`).** La tarea es extracción de texto corto: alcanza con el modelo más rápido, barato y con más cuota. Si no alcanza, cambiar de modelo es configuración; la evaluación lo mide.
+- **Normalización por endpoint explícito que solo propone (no modifica productos).** Crear productos no depende de la IA, reintentar es seguro y el endpoint sirve como tool para un agente (proponer y aplicar por separado: human-in-the-loop).
+- **Reintentos en una sola capa (la nuestra); los del SDK apagados.** El SDK reintenta 5 veces por defecto: sumar los nuestros multiplicaría las llamadas (amplificación de reintentos). Los propios se registran, se cuentan por corrida y se testean sin red.
+- **Política de fallas.** Transitorias (429, 5xx, timeout, red): hasta 3 intentos con backoff exponencial y jitter, respetando la espera que pide la API si es corta. Permanentes (400, 401, 403): sin reintento. Si se agotan: 503.
+- **Limitador de ritmo por proceso con backpressure.** Respeta 15 RPM espaciando llamadas y rechaza en vez de encolar más de 10 s. Con varias instancias haría falta un contador compartido (Redis).
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM
