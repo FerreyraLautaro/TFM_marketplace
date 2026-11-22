@@ -1,5 +1,7 @@
 import { DataSourceOptions } from 'typeorm';
 import { Env } from '../config/env.schema';
+import { Brand } from '../catalog/brand.entity';
+import { NormalizationRun } from '../catalog/normalization-run.entity';
 import { migrations } from './migrations';
 import { OrderItem } from '../orders/order-item.entity';
 import { Order } from '../orders/order.entity';
@@ -24,7 +26,15 @@ export function buildDataSourceOptions(env: DatabaseEnv): DataSourceOptions {
     username: env.POSTGRES_USER,
     password: env.POSTGRES_PASSWORD,
     database: env.POSTGRES_DB,
-    entities: [User, Product, Order, SubOrder, OrderItem],
+    entities: [
+      User,
+      Product,
+      Order,
+      SubOrder,
+      OrderItem,
+      Brand,
+      NormalizationRun,
+    ],
     migrations,
     synchronize: false,
   };
