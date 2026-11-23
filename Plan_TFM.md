@@ -88,8 +88,8 @@ TypeORM transactions, Testing (e2e).
 
 - [x] API key de Gemini y límites confirmados en la consola (`gemini-3.1-flash-lite`: 15 RPM, 250K TPM, 500 RPD en el plan gratuito)
 - [x] `LlmProvider` + `GeminiLlmProvider` con salida estructurada (reintentos propios, timeout, limitador de ritmo)
-- [ ] Taxonomía de categorías y semilla de marcas
-- [ ] Normalizador con prompt v1 + registro en `NormalizationRun`
+- [x] Taxonomía de categorías (18, con `SIN_CATEGORIA`) y semilla de 35 marcas con alias (en la migración)
+- [x] Normalizador con prompt v1 + registro en `NormalizationRun` (`POST /catalog/normalize`, solo SELLER)
 - [ ] Golden dataset de 30–50 productos etiquetado a mano
 - [ ] Script de evaluación + prompt v2
 - [ ] Reporte comparativo v1 vs v2 con números
@@ -185,6 +185,14 @@ endpoint de normalización funciona.
 - **Reintentos en una sola capa (la nuestra); los del SDK apagados.** El SDK reintenta 5 veces por defecto: sumar los nuestros multiplicaría las llamadas (amplificación de reintentos). Los propios se registran, se cuentan por corrida y se testean sin red.
 - **Política de fallas.** Transitorias (429, 5xx, timeout, red): hasta 3 intentos con backoff exponencial y jitter, respetando la espera que pide la API si es corta. Permanentes (400, 401, 403): sin reintento. Si se agotan: 503.
 - **Limitador de ritmo por proceso con backpressure.** Respeta 15 RPM espaciando llamadas y rechaza en vez de encolar más de 10 s. Con varias instancias haría falta un contador compartido (Redis).
+- **El LLM interpreta, el código decide lo determinístico.** El modelo extrae marca, nombre, cantidad, unidad cruda, categoría y confianza; el código convierte unidades (l→ml, kg→g) y compara marcas contra la tabla.
+- **Marcas: coincidencia exacta sobre una clave normalizada + alias.** Sin mayúsculas, acentos, artículos ni puntuación. Sin similitud difusa: una marca desconocida va a `PENDIENTE_REVISION` en vez de adivinarse (un falso positivo es peor que un "no sé").
+- **Marcas y categorías como datos de referencia en la migración.** Tienen que existir en todos los entornos; un seed aparte dejaría una base nueva sin marcas.
+- **Un solo esquema (zod) para pedir y validar la salida del LLM.** Se convierte a JSON Schema para Gemini y valida lo que vuelve: la salida de un LLM se trata como dato no confiable.
+- **Cada llamada queda en `NormalizationRun`** (texto, prompt, modelo, salida cruda, resultado, estado, intentos, latencia, tokens): observabilidad y materia prima de la evaluación.
+- **Endpoint solo para SELLER.** Un endpoint público que llama a un LLM pago permite consumir la cuota o generar costos.
+- **Errores del LLM según su naturaleza:** 503 + `Retry-After` si no está disponible, 502 si responde algo inválido (falla del servicio externo, no del usuario), siempre con la corrida registrada.
+- **El texto del producto va delimitado y marcado como dato.** Mitiga inyección de prompt: un título como "ignorá las instrucciones…" no se interpreta como orden.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM
