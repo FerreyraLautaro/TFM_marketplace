@@ -21,7 +21,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
+    "eval": "ts-node -P tsconfig.json eval/run-eval.ts",
+    "eval:compare": "ts-node -P tsconfig.json eval/compare.ts",
+    "eval:render": "ts-node -P tsconfig.json eval/render.ts"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",

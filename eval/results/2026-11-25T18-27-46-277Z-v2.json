@@ -1,0 +1,137 @@
+{
+  "promptVersion": "v2",
+  "model": "gemini-3.5-flash-lite",
+  "startedAt": "2026-11-25T18:27:46.277Z",
+  "datasetSize": 49,
+  "runsRequested": 2,
+  "partial": false,
+  "runs": [
+    {
+      "run": 1,
+      "completed": true,
+      "score": {
+        "total": 49,
+        "statuses": {
+          "SUCCESS": 48,
+          "INVALID_OUTPUT": 0,
+          "ERROR": 1
+        },
+        "fieldAccuracy": {
+          "brand": 0.9795918367346939,
+          "brandStatus": 0.9795918367346939,
+          "quantity": 0.9795918367346939,
+          "unit": 0.9795918367346939,
+          "category": 0.9591836734693877,
+          "productName": 0.9387755102040817
+        },
+        "fullMatch": 0.9591836734693877,
+        "latencyMs": {
+          "p50": 4748,
+          "p95": 13989
+        },
+        "tokens": {
+          "input": 33021,
+          "output": 2786
+        },
+        "retries": 17,
+        "mismatches": [
+          {
+            "id": 3,
+            "rawText": "YOGUR BEBIBLE FRUTILLA ILOLAY 900G",
+            "field": "productName",
+            "expected": "Yogur bebible frutilla",
+            "actual": "Yogur bebible de frutilla"
+          },
+          {
+            "id": 15,
+            "rawText": "HELADO DE DULCE DE LECHE 1 KG",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          },
+          {
+            "id": 35,
+            "rawText": "YERBA PLAYADITO 500 GR",
+            "field": "productName",
+            "expected": "Yerba mate",
+            "actual": "Yerba"
+          },
+          {
+            "id": 49,
+            "rawText": "PILAS DURACELL AA 4 UNIDADES",
+            "field": "category",
+            "expected": "SIN_CATEGORIA",
+            "actual": "LIMPIEZA"
+          }
+        ]
+      }
+    },
+    {
+      "run": 2,
+      "completed": true,
+      "score": {
+        "total": 49,
+        "statuses": {
+          "SUCCESS": 46,
+          "INVALID_OUTPUT": 0,
+          "ERROR": 3
+        },
+        "fieldAccuracy": {
+          "brand": 0.9387755102040817,
+          "brandStatus": 0.9387755102040817,
+          "quantity": 0.9387755102040817,
+          "unit": 0.9387755102040817,
+          "category": 0.9183673469387755,
+          "productName": 0.9183673469387755
+        },
+        "fullMatch": 0.9183673469387755,
+        "latencyMs": {
+          "p50": 5176,
+          "p95": 9279
+        },
+        "tokens": {
+          "input": 31644,
+          "output": 2618
+        },
+        "retries": 18,
+        "mismatches": [
+          {
+            "id": 3,
+            "rawText": "YOGUR BEBIBLE FRUTILLA ILOLAY 900G",
+            "field": "productName",
+            "expected": "Yogur bebible frutilla",
+            "actual": "Yogur bebible de frutilla"
+          },
+          {
+            "id": 31,
+            "rawText": "CALDO DE GALLINA KNORR 6 UNIDADES",
+            "field": "category",
+            "expected": "ALMACEN",
+            "actual": "ACEITES_Y_CONDIMENTOS"
+          },
+          {
+            "id": 40,
+            "rawText": "PAPAS FRITAS LAYS CLASICAS 140 G",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          },
+          {
+            "id": 47,
+            "rawText": "PAÑALES PAMPERS TALLE G 36 UN",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          },
+          {
+            "id": 49,
+            "rawText": "PILAS DURACELL AA 4 UNIDADES",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          }
+        ]
+      }
+    }
+  ]
+}

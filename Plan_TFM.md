@@ -86,13 +86,13 @@ TypeORM transactions, Testing (e2e).
 
 > **Modo de trabajo de esta semana:** más participación mía. Cada decisión de diseño (proveedor, prompt, esquema de salida, manejo de errores, costos y límites) se discute antes de implementar, y el código se revisa pensando en cómo funcionaría en un entorno real: reintentos, timeouts, cuotas de la API, costo por llamada, observabilidad y qué pasa cuando el LLM falla o devuelve algo inválido.
 
-- [x] API key de Gemini y límites confirmados en la consola (`gemini-3.1-flash-lite`: 15 RPM, 250K TPM, 500 RPD en el plan gratuito)
+- [x] API key de Gemini y límites confirmados en la consola (se empezó con `gemini-3.1-flash-lite`; se migró a `gemini-3.5-flash-lite`)
 - [x] `LlmProvider` + `GeminiLlmProvider` con salida estructurada (reintentos propios, timeout, limitador de ritmo)
 - [x] Taxonomía de categorías (18, con `SIN_CATEGORIA`) y semilla de 35 marcas con alias (en la migración)
 - [x] Normalizador con prompt v1 + registro en `NormalizationRun` (`POST /catalog/normalize`, solo SELLER)
-- [ ] Golden dataset de 30–50 productos etiquetado a mano
-- [ ] Script de evaluación + prompt v2
-- [ ] Reporte comparativo v1 vs v2 con números
+- [x] Golden dataset de 49 productos (borrador de Claude revisado fila por fila; reglas de etiquetado en el archivo)
+- [x] Script de evaluación (`npm run eval`, 2 corridas por defecto) + prompt v2 (reglas y ejemplos fuera del dataset)
+- [x] Reporte comparativo v1 vs v2 con números (`eval/reports/comparacion-v1-vs-v2.md`): todos los campos objetivos 85,4% → 97,9% sobre llamadas respondidas, tokens de entrada 271 → 688 por llamada
 
 **Terminado cuando:** existe un reporte que compara v1 y v2 por campo y el
 endpoint de normalización funciona.
@@ -180,7 +180,7 @@ endpoint de normalización funciona.
 - **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago será otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
 - **Solo se aceptan suborders de órdenes pagadas.**
 - **Migraciones en lista explícita, como las entidades.** Un glob de archivos dependía de rutas (mayúsculas de unidad en Windows, `.d.ts` en `dist`); la lista funciona igual en local, tests y Railway.
-- **Modelo `gemini-3.1-flash-lite`, configurable por variable (`GEMINI_MODEL`).** La tarea es extracción de texto corto: alcanza con el modelo más rápido, barato y con más cuota. Si no alcanza, cambiar de modelo es configuración; la evaluación lo mide.
+- **Modelo Flash-Lite, configurable por variable (`GEMINI_MODEL`).** La tarea es extracción de texto corto: alcanza con el modelo más rápido, barato y con más cuota. Se empezó con `gemini-3.1-flash-lite` y se migró a `gemini-3.5-flash-lite`: el anterior tiene fecha de apagado (mayo 2027), su reemplazo oficial es el 3.5, y estaba saturado durante la evaluación. La migración fue solo de configuración (`GEMINI_MODEL` y `GEMINI_RPM`), y la evaluación se corre sobre el modelo de producción.
 - **Normalización por endpoint explícito que solo propone (no modifica productos).** Crear productos no depende de la IA, reintentar es seguro y el endpoint sirve como tool para un agente (proponer y aplicar por separado: human-in-the-loop).
 - **Reintentos en una sola capa (la nuestra); los del SDK apagados.** El SDK reintenta 5 veces por defecto: sumar los nuestros multiplicaría las llamadas (amplificación de reintentos). Los propios se registran, se cuentan por corrida y se testean sin red.
 - **Política de fallas.** Transitorias (429, 5xx, timeout, red): hasta 3 intentos con backoff exponencial y jitter, respetando la espera que pide la API si es corta. Permanentes (400, 401, 403): sin reintento. Si se agotan: 503.
@@ -193,6 +193,11 @@ endpoint de normalización funciona.
 - **Endpoint solo para SELLER.** Un endpoint público que llama a un LLM pago permite consumir la cuota o generar costos.
 - **Errores del LLM según su naturaleza:** 503 + `Retry-After` si no está disponible, 502 si responde algo inválido (falla del servicio externo, no del usuario), siempre con la corrida registrada.
 - **El texto del producto va delimitado y marcado como dato.** Mitiga inyección de prompt: un título como "ignorá las instrucciones…" no se interpreta como orden.
+- **Evaluación con golden dataset y 2 corridas por versión.** Mide precisión por campo, variación del modelo consigo mismo (con `temperature: 0` fue ~0%), disponibilidad, tokens y latencia. Una mejora menor o igual a esa variación no cuenta.
+- **Calidad separada de disponibilidad.** Las llamadas que fallan por el proveedor (503) se reportan como disponibilidad y no como error del prompt; si no, un mal momento de Google parece una regresión.
+- **Prompt v2 dirigido por errores medidos.** Cada regla corrige una causa observada en la v1 ("X KG" como venta por peso, quesos, galletitas, estilo de nombre). Los ejemplos no pueden ser ítems del dataset (data leakage) y un test lo garantiza.
+- **Limitación conocida:** la v2 se ajustó mirando el mismo dataset con el que se evalúa; para afirmar que generaliza haría falta un segundo dataset reservado.
+- **Costo vs precisión:** la v2 usa 2,5× tokens de entrada por llamada (reglas y ejemplos) por +12,5 pp. Con Flash-Lite y este volumen es despreciable; a escala es una decisión de negocio.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM

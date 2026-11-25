@@ -94,7 +94,7 @@ describe('CatalogNormalizerService', () => {
     };
     expect(response).toMatchObject({
       runId: 'run-1',
-      promptVersion: 'v1',
+      promptVersion: 'v2',
       model: 'test-model',
       proposal,
       meta: { attempts: 2 },
@@ -102,7 +102,7 @@ describe('CatalogNormalizerService', () => {
     expect(savedRun()).toMatchObject({
       userId: 'user-1',
       rawText: 'LECHE SERENISIMA ENTERA 1LT',
-      promptVersion: 'v1',
+      promptVersion: 'v2',
       model: 'test-model',
       status: NormalizationRunStatus.SUCCESS,
       rawOutput: validOutput,

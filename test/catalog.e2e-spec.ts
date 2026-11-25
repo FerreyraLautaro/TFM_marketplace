@@ -75,7 +75,7 @@ describe('Catalog (e2e)', () => {
 
     const body = res.body as { runId: string; proposal: unknown };
     expect(body).toMatchObject({
-      promptVersion: 'v1',
+      promptVersion: 'v2',
       model: 'fake-model',
       meta: { attempts: 1 },
       proposal: {
