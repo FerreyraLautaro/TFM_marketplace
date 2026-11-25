@@ -1,9 +1,19 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, EntityManager, FindOperator } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  FindOperator,
+  QueryFailedError,
+} from 'typeorm';
 import { EVENT_PUBLISHER } from '../events/event-publisher';
 import { PAYMENT_PROVIDER } from '../payments/payment-provider';
+import { PaymentStatus } from '../payments/payment-status.enum';
+import {
+  ONE_PENDING_PAYMENT_PER_ORDER,
+  Payment,
+} from '../payments/payment.entity';
 import { Product } from '../products/product.entity';
 import { User } from '../users/user.entity';
 import { OrderStatus } from './order-status.enum';
@@ -66,7 +76,15 @@ describe('OrdersService', () => {
   };
   const ordersRepository = { find: jest.fn(), findOne: jest.fn() };
   const payments = {
-    charge: jest.fn(() => Promise.resolve({ reference: 'fake-ref' })),
+    createPayment: jest.fn(() => Promise.resolve({ reference: 'fake-ref' })),
+  };
+  const paymentsRepository = {
+    find: jest.fn(),
+    create: jest.fn((data: Partial<Payment>) => data),
+    save: jest.fn((payment: Partial<Payment>) =>
+      Promise.resolve({ ...payment, id: 'payment-1' }),
+    ),
+    findOneByOrFail: jest.fn(),
   };
   const events = {
     publish: jest.fn((event: { type: string }) => {
@@ -87,6 +105,10 @@ describe('OrdersService', () => {
         OrdersService,
         { provide: DataSource, useValue: dataSource },
         { provide: getRepositoryToken(Order), useValue: ordersRepository },
+        {
+          provide: getRepositoryToken(Payment),
+          useValue: paymentsRepository,
+        },
         { provide: PAYMENT_PROVIDER, useValue: payments },
         { provide: EVENT_PUBLISHER, useValue: events },
       ],
@@ -257,6 +279,7 @@ describe('OrdersService', () => {
 
   describe('pay', () => {
     let order: Order;
+    let existing: Partial<Payment>[];
 
     beforeEach(() => {
       order = {
@@ -265,6 +288,7 @@ describe('OrdersService', () => {
         status: OrderStatus.PENDING,
         total: 12.5,
       } as Order;
+      existing = [];
       ordersRepository.findOne.mockImplementation(
         ({ where }: { where: { id: string; buyerId: string } }) =>
           Promise.resolve(
@@ -273,26 +297,84 @@ describe('OrdersService', () => {
               : null,
           ),
       );
+      paymentsRepository.find.mockImplementation(() =>
+        Promise.resolve(existing),
+      );
     });
 
-    it('charges the order total, marks it paid and publishes OrderPaid', async () => {
-      await service.pay('order-1', 'buyer-1');
+    it('creates a pending payment for the order total without marking it paid', async () => {
+      await expect(service.pay('order-1', 'buyer-1')).resolves.toEqual({
+        paymentReference: 'fake-ref',
+        status: PaymentStatus.PENDING,
+        amount: 12.5,
+      });
 
-      expect(payments.charge).toHaveBeenCalledWith({
+      expect(payments.createPayment).toHaveBeenCalledWith({
         orderId: 'order-1',
         amount: 12.5,
       });
-      expect(updates()).toEqual([
-        {
-          entity: Order,
-          set: { status: OrderStatus.PAID },
-          where: { id: 'order-1', status: OrderStatus.PENDING },
-        },
-      ]);
-      expect(events.publish).toHaveBeenCalledWith({
-        type: 'OrderPaid',
+      expect(paymentsRepository.save).toHaveBeenCalledWith({
         orderId: 'order-1',
-        paymentReference: 'fake-ref',
+        reference: 'fake-ref',
+        amount: 12.5,
+        status: PaymentStatus.PENDING,
+      });
+      expect(queryBuilder.execute).not.toHaveBeenCalled();
+      expect(events.publish).not.toHaveBeenCalled();
+    });
+
+    it('returns the existing pending payment instead of creating another', async () => {
+      existing = [
+        { reference: 'fake-old', status: PaymentStatus.PENDING, amount: 12.5 },
+      ];
+
+      await expect(service.pay('order-1', 'buyer-1')).resolves.toEqual({
+        paymentReference: 'fake-old',
+        status: PaymentStatus.PENDING,
+        amount: 12.5,
+      });
+      expect(payments.createPayment).not.toHaveBeenCalled();
+      expect(paymentsRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('returns 409 when the order already has an approved payment', async () => {
+      existing = [{ reference: 'fake-old', status: PaymentStatus.APPROVED }];
+
+      await expect(service.pay('order-1', 'buyer-1')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(payments.createPayment).not.toHaveBeenCalled();
+    });
+
+    it('only looks for pending or approved payments, so a rejected one allows a new payment', async () => {
+      await service.pay('order-1', 'buyer-1');
+
+      const [{ where }] = paymentsRepository.find.mock.calls[0] as [
+        { where: { orderId: string; status: FindOperator<string[]> } },
+      ];
+      expect(where.orderId).toBe('order-1');
+      expect(where.status.value).toEqual([
+        PaymentStatus.PENDING,
+        PaymentStatus.APPROVED,
+      ]);
+      expect(payments.createPayment).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns the payment stored by a concurrent request that won the race', async () => {
+      paymentsRepository.save.mockRejectedValueOnce(
+        new QueryFailedError('INSERT', [], {
+          code: '23505',
+          constraint: ONE_PENDING_PAYMENT_PER_ORDER,
+        } as unknown as Error),
+      );
+      paymentsRepository.findOneByOrFail.mockResolvedValue({
+        reference: 'fake-winner',
+        status: PaymentStatus.PENDING,
+        amount: 12.5,
+      });
+
+      await expect(service.pay('order-1', 'buyer-1')).resolves.toMatchObject({
+        paymentReference: 'fake-winner',
       });
     });
 
@@ -300,30 +382,21 @@ describe('OrdersService', () => {
       await expect(service.pay('order-1', 'buyer-2')).rejects.toBeInstanceOf(
         NotFoundException,
       );
-      expect(payments.charge).not.toHaveBeenCalled();
+      expect(payments.createPayment).not.toHaveBeenCalled();
     });
 
     it.each([OrderStatus.PAID, OrderStatus.COMPLETED, OrderStatus.CANCELLED])(
-      'returns 409 without charging an order that is %s',
+      'returns 409 without creating a payment for an order that is %s',
       async (status) => {
         order.status = status;
 
         await expect(service.pay('order-1', 'buyer-1')).rejects.toBeInstanceOf(
           ConflictException,
         );
-        expect(payments.charge).not.toHaveBeenCalled();
-        expect(events.publish).not.toHaveBeenCalled();
+        expect(payments.createPayment).not.toHaveBeenCalled();
+        expect(paymentsRepository.save).not.toHaveBeenCalled();
       },
     );
-
-    it('returns 409 and publishes nothing when another request changed the order first', async () => {
-      affected = 0;
-
-      await expect(service.pay('order-1', 'buyer-1')).rejects.toBeInstanceOf(
-        ConflictException,
-      );
-      expect(events.publish).not.toHaveBeenCalled();
-    });
   });
 
   describe('cancel', () => {

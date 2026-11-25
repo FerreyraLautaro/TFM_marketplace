@@ -15,6 +15,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PaymentSummary } from '../payments/payment-summary';
 import { UserRole } from '../users/user-role.enum';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from './order.entity';
@@ -49,12 +50,13 @@ export class OrdersController {
     return this.ordersService.findOneForBuyer(id, user.id);
   }
 
+  // Starts an asynchronous payment; the order becomes PAID when the provider
+  // confirms it through the payment webhook.
   @Post(':id/pay')
-  @HttpCode(HttpStatus.OK)
   pay(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthUser,
-  ): Promise<Order> {
+  ): Promise<PaymentSummary> {
     return this.ordersService.pay(id, user.id);
   }
 

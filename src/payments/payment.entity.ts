@@ -12,10 +12,13 @@ import { numericTransformer } from '../database/numeric.transformer';
 import { Order } from '../orders/order.entity';
 import { PaymentStatus } from './payment-status.enum';
 
+export const ONE_PENDING_PAYMENT_PER_ORDER =
+  'IDX_payment_one_pending_per_order';
+
 // The partial unique index lets the database settle two concurrent "pay"
 // requests: only one PENDING payment per order can ever exist.
 @Entity()
-@Index('IDX_payment_one_pending_per_order', ['orderId'], {
+@Index(ONE_PENDING_PAYMENT_PER_ORDER, ['orderId'], {
   unique: true,
   where: `"status" = 'PENDING'`,
 })
