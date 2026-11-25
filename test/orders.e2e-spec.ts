@@ -196,18 +196,33 @@ describe('Orders (e2e)', () => {
     });
   });
 
-  it('runs the order through payment, fulfilment and completion', async () => {
+  it('runs the order through payment confirmed by webhook, fulfilment and completion', async () => {
     const order = await placeOrder();
     const subA = subOrderOf(order, sellerA);
     const subB = subOrderOf(order, sellerB);
 
     await changeStatus(sellerA, subA.id, 'ACCEPTED').expect(409);
 
-    const paid = await request(server())
+    // Paying only starts the payment; the order waits for the provider.
+    const payment = await request(server())
       .post(`/orders/${order.id}/pay`)
       .auth(buyer.token, { type: 'bearer' })
-      .expect(200);
-    expect((paid.body as OrderBody).status).toBe('PAID');
+      .expect(201);
+    expect(payment.body).toEqual({
+      paymentReference: expect.stringMatching(/^fake-/) as string,
+      status: 'PENDING',
+      amount: 44.5,
+    });
+    expect((await getOrder(order.id)).status).toBe('PENDING');
+    await changeStatus(sellerA, subA.id, 'ACCEPTED').expect(409);
+
+    const { paymentReference } = payment.body as { paymentReference: string };
+    await request(server())
+      .post(`/payments/${paymentReference}/simulate`)
+      .auth(buyer.token, { type: 'bearer' })
+      .send({ status: 'APPROVED' })
+      .expect(200, { status: 'processed', outcome: 'APPLIED' });
+    expect((await getOrder(order.id)).status).toBe('PAID');
 
     await changeStatus(sellerA, subA.id, 'ACCEPTED').expect(200);
     const shipped = await changeStatus(sellerA, subA.id, 'SHIPPED').expect(200);
@@ -247,7 +262,7 @@ describe('Orders (e2e)', () => {
         orderId: order.id,
         total: 44.5,
       }),
-      expect.objectContaining({ type: 'OrderPaid', orderId: order.id }),
+      { type: 'OrderPaid', orderId: order.id, paymentReference },
       expect.objectContaining(transition(subA.id, 'PENDING', 'ACCEPTED')),
       expect.objectContaining(transition(subA.id, 'ACCEPTED', 'SHIPPED')),
       expect.objectContaining(transition(subA.id, 'SHIPPED', 'DELIVERED')),
