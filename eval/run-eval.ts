@@ -188,7 +188,14 @@ async function main(): Promise<void> {
           `el proveedor pidió esperar ${Math.round((error.retryAfterMs ?? 0) / 1000)} s (probable cuota diaria agotada)`,
         );
       }
-      return { ...base, status: 'ERROR', error: errorText(error) };
+      return {
+        ...base,
+        status: 'ERROR',
+        error: errorText(error),
+        // Failed calls also spent retries; count them so the report shows the real effort.
+        attempts:
+          error instanceof LlmUnavailableError ? error.attempts : undefined,
+      };
     }
   }
 }
