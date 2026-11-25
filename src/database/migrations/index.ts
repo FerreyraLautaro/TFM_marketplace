@@ -3,6 +3,7 @@ import { AddPasswordAndRoleToUser1795199725892 } from './1795199725892-AddPasswo
 import { CreateProduct1795200134338 } from './1795200134338-CreateProduct';
 import { CreateOrders1795201332475 } from './1795201332475-CreateOrders';
 import { CreateCatalog1795391311402 } from './1795391311402-CreateCatalog';
+import { CreatePayments1795633972962 } from './1795633972962-CreatePayments';
 
 // Explicit list instead of a glob: globs broke on Windows drive-letter casing and
 // had to skip the compiled .d.ts files. Every new migration must be added here.
@@ -12,4 +13,5 @@ export const migrations = [
   CreateProduct1795200134338,
   CreateOrders1795201332475,
   CreateCatalog1795391311402,
+  CreatePayments1795633972962,
 ];

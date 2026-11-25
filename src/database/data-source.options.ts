@@ -6,6 +6,8 @@ import { migrations } from './migrations';
 import { OrderItem } from '../orders/order-item.entity';
 import { Order } from '../orders/order.entity';
 import { SubOrder } from '../orders/sub-order.entity';
+import { Payment } from '../payments/payment.entity';
+import { ProcessedWebhookEvent } from '../payments/processed-webhook-event.entity';
 import { Product } from '../products/product.entity';
 import { User } from '../users/user.entity';
 
@@ -34,6 +36,8 @@ export function buildDataSourceOptions(env: DatabaseEnv): DataSourceOptions {
       OrderItem,
       Brand,
       NormalizationRun,
+      Payment,
+      ProcessedWebhookEvent,
     ],
     migrations,
     synchronize: false,
