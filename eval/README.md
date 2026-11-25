@@ -23,11 +23,14 @@ npm run eval -- --prompt v1 --runs 1
 
 # Comparar dos evaluaciones
 npm run eval:compare -- eval/results/<archivo-v1>.json eval/results/<archivo-v2>.json
+
+# Regenerar el reporte de resultados guardados (sin llamar al modelo)
+npm run eval:render -- eval/results/<archivo>.json
 ```
 
 ## Cuota
 
-Cada corrida hace una llamada por producto (49). Con el plan gratuito de `gemini-3.1-flash-lite` (15 por minuto, 500 por día):
+Cada corrida hace una llamada por producto (49). Con un límite de 15 llamadas por minuto (`GEMINI_RPM`) y 500 por día (revisar los límites del modelo en la consola de AI Studio):
 
 | Corridas por versión | Llamadas por versión | v1 + v2 | Tiempo por versión |
 | -------------------- | -------------------- | ------- | ------------------ |
@@ -37,6 +40,9 @@ Cada corrida hace una llamada por producto (49). Con el plan gratuito de `gemini
 Si el proveedor empieza a rechazar por cuota (3 errores seguidos, o una espera pedida mayor a 1 minuto), el script se detiene, guarda lo evaluado y marca el resultado como **parcial**, sin seguir gastando llamadas. En ese caso: esperar al día siguiente, o volver a correr con `--runs 1`.
 
 ## Cómo leer el resultado
+
+- **Calidad (solo llamadas que respondieron):** la métrica principal. Separa la calidad del prompt de las caídas del proveedor.
+- **Disponibilidad:** qué porcentaje de llamadas respondió. Depende de Gemini en ese momento, no del prompt.
 
 - **Precisión por campo:** marca, estado de marca, cantidad, unidad y categoría tienen una sola respuesta correcta. `productName` se reporta aparte porque es subjetivo (se compara sin mayúsculas ni acentos).
 - **Variación entre corridas:** aunque se usa `temperature: 0`, el modelo no es 100% determinístico. Una mejora entre versiones menor o igual a esa variación no es evidencia de mejora.

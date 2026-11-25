@@ -1,0 +1,270 @@
+{
+  "promptVersion": "v1",
+  "model": "gemini-3.5-flash-lite",
+  "startedAt": "2026-11-25T18:12:24.780Z",
+  "datasetSize": 49,
+  "runsRequested": 2,
+  "partial": false,
+  "runs": [
+    {
+      "run": 1,
+      "completed": true,
+      "score": {
+        "total": 49,
+        "statuses": {
+          "SUCCESS": 48,
+          "INVALID_OUTPUT": 0,
+          "ERROR": 1
+        },
+        "fieldAccuracy": {
+          "brand": 0.9795918367346939,
+          "brandStatus": 0.9795918367346939,
+          "quantity": 0.8775510204081632,
+          "unit": 0.9795918367346939,
+          "category": 0.9183673469387755,
+          "productName": 0.8775510204081632
+        },
+        "fullMatch": 0.8367346938775511,
+        "latencyMs": {
+          "p50": 4152,
+          "p95": 12472
+        },
+        "tokens": {
+          "input": 13005,
+          "output": 3051
+        },
+        "retries": 18,
+        "mismatches": [
+          {
+            "id": 6,
+            "rawText": "QUESO CREMOSO LA SERENISIMA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 6,
+            "rawText": "QUESO CREMOSO LA SERENISIMA X KG",
+            "field": "category",
+            "expected": "FIAMBRES_Y_QUESOS",
+            "actual": "LACTEOS"
+          },
+          {
+            "id": 7,
+            "rawText": "QUESO RALLADO SANCOR 40 GR",
+            "field": "category",
+            "expected": "FIAMBRES_Y_QUESOS",
+            "actual": "LACTEOS"
+          },
+          {
+            "id": 8,
+            "rawText": "JAMON COCIDO PALADINI X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 11,
+            "rawText": "PATITAS DE POLLO PATY 380 GR",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          },
+          {
+            "id": 12,
+            "rawText": "ASADO DE TIRA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 13,
+            "rawText": "BANANA ECUADOR X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 14,
+            "rawText": "TOMATE PERITA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 18,
+            "rawText": "SPRITE LIMA LIMON 500 CC",
+            "field": "productName",
+            "expected": "Gaseosa lima limón",
+            "actual": "Gaseosa sabor lima limón"
+          },
+          {
+            "id": 19,
+            "rawText": "FANTA NARANJA 1.5LT",
+            "field": "productName",
+            "expected": "Gaseosa naranja",
+            "actual": "Gaseosa Sabor Naranja"
+          },
+          {
+            "id": 21,
+            "rawText": "CERVEZA QUILMES CLASICA LATA 473 CC",
+            "field": "productName",
+            "expected": "Cerveza clásica",
+            "actual": "Cerveza clasica lata"
+          },
+          {
+            "id": 24,
+            "rawText": "ACEITE GIRASOL NATURA 1.5LT",
+            "field": "productName",
+            "expected": "Aceite de girasol",
+            "actual": "ACEITE GIRASOL"
+          },
+          {
+            "id": 35,
+            "rawText": "YERBA PLAYADITO 500 GR",
+            "field": "productName",
+            "expected": "Yerba mate",
+            "actual": "Yerba"
+          },
+          {
+            "id": 37,
+            "rawText": "GALLETITAS CRIOLLITAS BAGLEY 300G",
+            "field": "category",
+            "expected": "DESAYUNO_Y_MERIENDA",
+            "actual": "SNACKS_Y_GOLOSINAS"
+          }
+        ]
+      }
+    },
+    {
+      "run": 2,
+      "completed": true,
+      "score": {
+        "total": 49,
+        "statuses": {
+          "SUCCESS": 48,
+          "INVALID_OUTPUT": 0,
+          "ERROR": 1
+        },
+        "fieldAccuracy": {
+          "brand": 0.9795918367346939,
+          "brandStatus": 0.9795918367346939,
+          "quantity": 0.8775510204081632,
+          "unit": 0.9795918367346939,
+          "category": 0.9183673469387755,
+          "productName": 0.8775510204081632
+        },
+        "fullMatch": 0.8367346938775511,
+        "latencyMs": {
+          "p50": 4106,
+          "p95": 11907
+        },
+        "tokens": {
+          "input": 13000,
+          "output": 3025
+        },
+        "retries": 14,
+        "mismatches": [
+          {
+            "id": 3,
+            "rawText": "YOGUR BEBIBLE FRUTILLA ILOLAY 900G",
+            "field": "status",
+            "expected": "SUCCESS",
+            "actual": "ERROR"
+          },
+          {
+            "id": 6,
+            "rawText": "QUESO CREMOSO LA SERENISIMA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 6,
+            "rawText": "QUESO CREMOSO LA SERENISIMA X KG",
+            "field": "category",
+            "expected": "FIAMBRES_Y_QUESOS",
+            "actual": "LACTEOS"
+          },
+          {
+            "id": 7,
+            "rawText": "QUESO RALLADO SANCOR 40 GR",
+            "field": "category",
+            "expected": "FIAMBRES_Y_QUESOS",
+            "actual": "LACTEOS"
+          },
+          {
+            "id": 8,
+            "rawText": "JAMON COCIDO PALADINI X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 12,
+            "rawText": "ASADO DE TIRA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 13,
+            "rawText": "BANANA ECUADOR X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 14,
+            "rawText": "TOMATE PERITA X KG",
+            "field": "quantity",
+            "expected": null,
+            "actual": 1000
+          },
+          {
+            "id": 18,
+            "rawText": "SPRITE LIMA LIMON 500 CC",
+            "field": "productName",
+            "expected": "Gaseosa lima limón",
+            "actual": "LIMA LIMON"
+          },
+          {
+            "id": 19,
+            "rawText": "FANTA NARANJA 1.5LT",
+            "field": "productName",
+            "expected": "Gaseosa naranja",
+            "actual": "Gaseosa Sabor Naranja"
+          },
+          {
+            "id": 21,
+            "rawText": "CERVEZA QUILMES CLASICA LATA 473 CC",
+            "field": "productName",
+            "expected": "Cerveza clásica",
+            "actual": "Cerveza clasica lata"
+          },
+          {
+            "id": 24,
+            "rawText": "ACEITE GIRASOL NATURA 1.5LT",
+            "field": "productName",
+            "expected": "Aceite de girasol",
+            "actual": "ACEITE GIRASOL"
+          },
+          {
+            "id": 35,
+            "rawText": "YERBA PLAYADITO 500 GR",
+            "field": "productName",
+            "expected": "Yerba mate",
+            "actual": "Yerba"
+          },
+          {
+            "id": 37,
+            "rawText": "GALLETITAS CRIOLLITAS BAGLEY 300G",
+            "field": "category",
+            "expected": "DESAYUNO_Y_MERIENDA",
+            "actual": "SNACKS_Y_GOLOSINAS"
+          }
+        ]
+      }
+    }
+  ]
+}
