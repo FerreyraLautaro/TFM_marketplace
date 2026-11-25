@@ -1,0 +1,600 @@
+{
+  "version": 1,
+  "rules": [
+    "Sold by weight (\"X KG\"): quantity null and unit g; it means priced per kilo, not a 1 kg package.",
+    "productName: sentence case, without brand or quantity, and naming the product (e.g. \"Gaseosa zero\", not \"Zero\").",
+    "category: the most specific one; cheeses go to FIAMBRES_Y_QUESOS, frozen ready-made products to CONGELADOS.",
+    "brand: catalog name when it matches (MATCHED); the brand as written when it is not in the catalog (PENDIENTE_REVISION); null when there is no brand (SIN_MARCA).",
+    "Units are compared after conversion: ml for liquids, g for solids, unidad for counted items."
+  ],
+  "items": [
+    {
+      "id": 1,
+      "rawText": "LECHE SERENISIMA ENTERA 1LT",
+      "expected": {
+        "brand": "La Serenísima",
+        "brandStatus": "MATCHED",
+        "productName": "Leche entera",
+        "quantity": 1000,
+        "unit": "ml",
+        "category": "LACTEOS"
+      }
+    },
+    {
+      "id": 2,
+      "rawText": "LECHE DESCREMADA SANCOR 1 L",
+      "expected": {
+        "brand": "SanCor",
+        "brandStatus": "MATCHED",
+        "productName": "Leche descremada",
+        "quantity": 1000,
+        "unit": "ml",
+        "category": "LACTEOS"
+      }
+    },
+    {
+      "id": 3,
+      "rawText": "YOGUR BEBIBLE FRUTILLA ILOLAY 900G",
+      "expected": {
+        "brand": "Ilolay",
+        "brandStatus": "MATCHED",
+        "productName": "Yogur bebible frutilla",
+        "quantity": 900,
+        "unit": "g",
+        "category": "LACTEOS"
+      }
+    },
+    {
+      "id": 4,
+      "rawText": "YOGUR ENTERO NATURAL DANONE 190 GR",
+      "expected": {
+        "brand": "Danone",
+        "brandStatus": "MATCHED",
+        "productName": "Yogur entero natural",
+        "quantity": 190,
+        "unit": "g",
+        "category": "LACTEOS"
+      }
+    },
+    {
+      "id": 5,
+      "rawText": "MANTECA LA SERENISIMA 200 G",
+      "expected": {
+        "brand": "La Serenísima",
+        "brandStatus": "MATCHED",
+        "productName": "Manteca",
+        "quantity": 200,
+        "unit": "g",
+        "category": "LACTEOS"
+      }
+    },
+    {
+      "id": 6,
+      "rawText": "QUESO CREMOSO LA SERENISIMA X KG",
+      "expected": {
+        "brand": "La Serenísima",
+        "brandStatus": "MATCHED",
+        "productName": "Queso cremoso",
+        "quantity": null,
+        "unit": "g",
+        "category": "FIAMBRES_Y_QUESOS"
+      }
+    },
+    {
+      "id": 7,
+      "rawText": "QUESO RALLADO SANCOR 40 GR",
+      "expected": {
+        "brand": "SanCor",
+        "brandStatus": "MATCHED",
+        "productName": "Queso rallado",
+        "quantity": 40,
+        "unit": "g",
+        "category": "FIAMBRES_Y_QUESOS"
+      }
+    },
+    {
+      "id": 8,
+      "rawText": "JAMON COCIDO PALADINI X KG",
+      "expected": {
+        "brand": "Paladini",
+        "brandStatus": "MATCHED",
+        "productName": "Jamón cocido",
+        "quantity": null,
+        "unit": "g",
+        "category": "FIAMBRES_Y_QUESOS"
+      }
+    },
+    {
+      "id": 9,
+      "rawText": "SALAME MILAN PALADINI 200G",
+      "expected": {
+        "brand": "Paladini",
+        "brandStatus": "MATCHED",
+        "productName": "Salame milán",
+        "quantity": 200,
+        "unit": "g",
+        "category": "FIAMBRES_Y_QUESOS"
+      }
+    },
+    {
+      "id": 10,
+      "rawText": "HAMBURGUESAS CLASICAS SWIFT 320 G",
+      "expected": {
+        "brand": "Swift",
+        "brandStatus": "MATCHED",
+        "productName": "Hamburguesas clásicas",
+        "quantity": 320,
+        "unit": "g",
+        "category": "CONGELADOS"
+      }
+    },
+    {
+      "id": 11,
+      "rawText": "PATITAS DE POLLO PATY 380 GR",
+      "expected": {
+        "brand": "Paty",
+        "brandStatus": "MATCHED",
+        "productName": "Patitas de pollo",
+        "quantity": 380,
+        "unit": "g",
+        "category": "CONGELADOS"
+      }
+    },
+    {
+      "id": 12,
+      "rawText": "ASADO DE TIRA X KG",
+      "expected": {
+        "brand": null,
+        "brandStatus": "SIN_MARCA",
+        "productName": "Asado de tira",
+        "quantity": null,
+        "unit": "g",
+        "category": "CARNES"
+      }
+    },
+    {
+      "id": 13,
+      "rawText": "BANANA ECUADOR X KG",
+      "expected": {
+        "brand": null,
+        "brandStatus": "SIN_MARCA",
+        "productName": "Banana ecuador",
+        "quantity": null,
+        "unit": "g",
+        "category": "FRUTAS_Y_VERDURAS"
+      }
+    },
+    {
+      "id": 14,
+      "rawText": "TOMATE PERITA X KG",
+      "expected": {
+        "brand": null,
+        "brandStatus": "SIN_MARCA",
+        "productName": "Tomate perita",
+        "quantity": null,
+        "unit": "g",
+        "category": "FRUTAS_Y_VERDURAS"
+      }
+    },
+    {
+      "id": 15,
+      "rawText": "HELADO DE DULCE DE LECHE 1 KG",
+      "expected": {
+        "brand": null,
+        "brandStatus": "SIN_MARCA",
+        "productName": "Helado de dulce de leche",
+        "quantity": 1000,
+        "unit": "g",
+        "category": "CONGELADOS"
+      }
+    },
+    {
+      "id": 16,
+      "rawText": "PAN LACTAL BIMBO 390 G",
+      "expected": {
+        "brand": "Bimbo",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Pan lactal",
+        "quantity": 390,
+        "unit": "g",
+        "category": "PANADERIA"
+      }
+    },
+    {
+      "id": 17,
+      "rawText": "COCA COLA ZERO 2.25 LT",
+      "expected": {
+        "brand": "Coca-Cola",
+        "brandStatus": "MATCHED",
+        "productName": "Gaseosa zero",
+        "quantity": 2250,
+        "unit": "ml",
+        "category": "BEBIDAS_SIN_ALCOHOL"
+      }
+    },
+    {
+      "id": 18,
+      "rawText": "SPRITE LIMA LIMON 500 CC",
+      "expected": {
+        "brand": "Sprite",
+        "brandStatus": "MATCHED",
+        "productName": "Gaseosa lima limón",
+        "quantity": 500,
+        "unit": "ml",
+        "category": "BEBIDAS_SIN_ALCOHOL"
+      }
+    },
+    {
+      "id": 19,
+      "rawText": "FANTA NARANJA 1.5LT",
+      "expected": {
+        "brand": "Fanta",
+        "brandStatus": "MATCHED",
+        "productName": "Gaseosa naranja",
+        "quantity": 1500,
+        "unit": "ml",
+        "category": "BEBIDAS_SIN_ALCOHOL"
+      }
+    },
+    {
+      "id": 20,
+      "rawText": "AGUA MINERAL VILLAVICENCIO SIN GAS 1.5 L",
+      "expected": {
+        "brand": "Villavicencio",
+        "brandStatus": "MATCHED",
+        "productName": "Agua mineral sin gas",
+        "quantity": 1500,
+        "unit": "ml",
+        "category": "BEBIDAS_SIN_ALCOHOL"
+      }
+    },
+    {
+      "id": 21,
+      "rawText": "CERVEZA QUILMES CLASICA LATA 473 CC",
+      "expected": {
+        "brand": "Quilmes",
+        "brandStatus": "MATCHED",
+        "productName": "Cerveza clásica",
+        "quantity": 473,
+        "unit": "ml",
+        "category": "BEBIDAS_CON_ALCOHOL"
+      }
+    },
+    {
+      "id": 22,
+      "rawText": "VINO TINTO MALBEC NORTON 750 ML",
+      "expected": {
+        "brand": "Norton",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Vino tinto malbec",
+        "quantity": 750,
+        "unit": "ml",
+        "category": "BEBIDAS_CON_ALCOHOL"
+      }
+    },
+    {
+      "id": 23,
+      "rawText": "FERNET BRANCA 750CC",
+      "expected": {
+        "brand": "Branca",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Fernet",
+        "quantity": 750,
+        "unit": "ml",
+        "category": "BEBIDAS_CON_ALCOHOL"
+      }
+    },
+    {
+      "id": 24,
+      "rawText": "ACEITE GIRASOL NATURA 1.5LT",
+      "expected": {
+        "brand": "Natura",
+        "brandStatus": "MATCHED",
+        "productName": "Aceite de girasol",
+        "quantity": 1500,
+        "unit": "ml",
+        "category": "ACEITES_Y_CONDIMENTOS"
+      }
+    },
+    {
+      "id": 25,
+      "rawText": "ACEITE DE OLIVA COCINERO 500 ML",
+      "expected": {
+        "brand": "Cocinero",
+        "brandStatus": "MATCHED",
+        "productName": "Aceite de oliva",
+        "quantity": 500,
+        "unit": "ml",
+        "category": "ACEITES_Y_CONDIMENTOS"
+      }
+    },
+    {
+      "id": 26,
+      "rawText": "MAYONESA HELLMANNS 475 GR",
+      "expected": {
+        "brand": "Hellmann's",
+        "brandStatus": "MATCHED",
+        "productName": "Mayonesa",
+        "quantity": 475,
+        "unit": "g",
+        "category": "ACEITES_Y_CONDIMENTOS"
+      }
+    },
+    {
+      "id": 27,
+      "rawText": "SAL FINA CELUSAL 500G",
+      "expected": {
+        "brand": "Celusal",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Sal fina",
+        "quantity": 500,
+        "unit": "g",
+        "category": "ACEITES_Y_CONDIMENTOS"
+      }
+    },
+    {
+      "id": 28,
+      "rawText": "FIDEOS SPAGHETTI LUCCHETTI 500 GR",
+      "expected": {
+        "brand": "Lucchetti",
+        "brandStatus": "MATCHED",
+        "productName": "Fideos spaghetti",
+        "quantity": 500,
+        "unit": "g",
+        "category": "ALMACEN"
+      }
+    },
+    {
+      "id": 29,
+      "rawText": "ARROZ LARGO FINO MAROLIO 1 KG",
+      "expected": {
+        "brand": "Marolio",
+        "brandStatus": "MATCHED",
+        "productName": "Arroz largo fino",
+        "quantity": 1000,
+        "unit": "g",
+        "category": "ALMACEN"
+      }
+    },
+    {
+      "id": 30,
+      "rawText": "AZUCAR LEDESMA 1KG",
+      "expected": {
+        "brand": "Ledesma",
+        "brandStatus": "MATCHED",
+        "productName": "Azúcar",
+        "quantity": 1000,
+        "unit": "g",
+        "category": "ALMACEN"
+      }
+    },
+    {
+      "id": 31,
+      "rawText": "CALDO DE GALLINA KNORR 6 UNIDADES",
+      "expected": {
+        "brand": "Knorr",
+        "brandStatus": "MATCHED",
+        "productName": "Caldo de gallina",
+        "quantity": 6,
+        "unit": "unidad",
+        "category": "ALMACEN"
+      }
+    },
+    {
+      "id": 32,
+      "rawText": "ARVEJAS REMOJADAS MAROLIO 350 G",
+      "expected": {
+        "brand": "Marolio",
+        "brandStatus": "MATCHED",
+        "productName": "Arvejas remojadas",
+        "quantity": 350,
+        "unit": "g",
+        "category": "CONSERVAS"
+      }
+    },
+    {
+      "id": 33,
+      "rawText": "ATUN EN ACEITE LA CAMPAGNOLA 170 G",
+      "expected": {
+        "brand": "La Campagnola",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Atún en aceite",
+        "quantity": 170,
+        "unit": "g",
+        "category": "CONSERVAS"
+      }
+    },
+    {
+      "id": 34,
+      "rawText": "YERBA MATE TARAGUI 1KG",
+      "expected": {
+        "brand": "Taragüi",
+        "brandStatus": "MATCHED",
+        "productName": "Yerba mate",
+        "quantity": 1000,
+        "unit": "g",
+        "category": "DESAYUNO_Y_MERIENDA"
+      }
+    },
+    {
+      "id": 35,
+      "rawText": "YERBA PLAYADITO 500 GR",
+      "expected": {
+        "brand": "Playadito",
+        "brandStatus": "MATCHED",
+        "productName": "Yerba mate",
+        "quantity": 500,
+        "unit": "g",
+        "category": "DESAYUNO_Y_MERIENDA"
+      }
+    },
+    {
+      "id": 36,
+      "rawText": "CAFE MOLIDO LA VIRGINIA 250G",
+      "expected": {
+        "brand": "La Virginia",
+        "brandStatus": "MATCHED",
+        "productName": "Café molido",
+        "quantity": 250,
+        "unit": "g",
+        "category": "DESAYUNO_Y_MERIENDA"
+      }
+    },
+    {
+      "id": 37,
+      "rawText": "GALLETITAS CRIOLLITAS BAGLEY 300G",
+      "expected": {
+        "brand": "Bagley",
+        "brandStatus": "MATCHED",
+        "productName": "Galletitas criollitas",
+        "quantity": 300,
+        "unit": "g",
+        "category": "DESAYUNO_Y_MERIENDA"
+      }
+    },
+    {
+      "id": 38,
+      "rawText": "ALFAJOR TRIPLE TERRABUSI 70 G",
+      "expected": {
+        "brand": "Terrabusi",
+        "brandStatus": "MATCHED",
+        "productName": "Alfajor triple",
+        "quantity": 70,
+        "unit": "g",
+        "category": "SNACKS_Y_GOLOSINAS"
+      }
+    },
+    {
+      "id": 39,
+      "rawText": "CHOCOLATE CON LECHE ARCOR 100G",
+      "expected": {
+        "brand": "Arcor",
+        "brandStatus": "MATCHED",
+        "productName": "Chocolate con leche",
+        "quantity": 100,
+        "unit": "g",
+        "category": "SNACKS_Y_GOLOSINAS"
+      }
+    },
+    {
+      "id": 40,
+      "rawText": "PAPAS FRITAS LAYS CLASICAS 140 G",
+      "expected": {
+        "brand": "Lays",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Papas fritas clásicas",
+        "quantity": 140,
+        "unit": "g",
+        "category": "SNACKS_Y_GOLOSINAS"
+      }
+    },
+    {
+      "id": 41,
+      "rawText": "DETERGENTE MAGISTRAL LIMON 500ML",
+      "expected": {
+        "brand": "Magistral",
+        "brandStatus": "MATCHED",
+        "productName": "Detergente limón",
+        "quantity": 500,
+        "unit": "ml",
+        "category": "LIMPIEZA"
+      }
+    },
+    {
+      "id": 42,
+      "rawText": "LAVANDINA AYUDIN 1 L",
+      "expected": {
+        "brand": "Ayudín",
+        "brandStatus": "MATCHED",
+        "productName": "Lavandina",
+        "quantity": 1000,
+        "unit": "ml",
+        "category": "LIMPIEZA"
+      }
+    },
+    {
+      "id": 43,
+      "rawText": "JABON EN POLVO ALA 800 G",
+      "expected": {
+        "brand": "Ala",
+        "brandStatus": "MATCHED",
+        "productName": "Jabón en polvo",
+        "quantity": 800,
+        "unit": "g",
+        "category": "LIMPIEZA"
+      }
+    },
+    {
+      "id": 44,
+      "rawText": "JABON LIQUIDO SKIP 3 LT",
+      "expected": {
+        "brand": "Skip",
+        "brandStatus": "MATCHED",
+        "productName": "Jabón líquido",
+        "quantity": 3000,
+        "unit": "ml",
+        "category": "LIMPIEZA"
+      }
+    },
+    {
+      "id": 45,
+      "rawText": "SHAMPOO DOVE 400ML",
+      "expected": {
+        "brand": "Dove",
+        "brandStatus": "MATCHED",
+        "productName": "Shampoo",
+        "quantity": 400,
+        "unit": "ml",
+        "category": "PERFUMERIA_E_HIGIENE"
+      }
+    },
+    {
+      "id": 46,
+      "rawText": "JABON DE TOCADOR DOVE 90 G",
+      "expected": {
+        "brand": "Dove",
+        "brandStatus": "MATCHED",
+        "productName": "Jabón de tocador",
+        "quantity": 90,
+        "unit": "g",
+        "category": "PERFUMERIA_E_HIGIENE"
+      }
+    },
+    {
+      "id": 47,
+      "rawText": "PAÑALES PAMPERS TALLE G 36 UN",
+      "expected": {
+        "brand": "Pampers",
+        "brandStatus": "MATCHED",
+        "productName": "Pañales talle G",
+        "quantity": 36,
+        "unit": "unidad",
+        "category": "BEBES"
+      }
+    },
+    {
+      "id": 48,
+      "rawText": "ALIMENTO PERRO DOG CHOW ADULTO 3 KG",
+      "expected": {
+        "brand": "Dog Chow",
+        "brandStatus": "MATCHED",
+        "productName": "Alimento para perro adulto",
+        "quantity": 3000,
+        "unit": "g",
+        "category": "MASCOTAS"
+      }
+    },
+    {
+      "id": 49,
+      "rawText": "PILAS DURACELL AA 4 UNIDADES",
+      "expected": {
+        "brand": "Duracell",
+        "brandStatus": "PENDIENTE_REVISION",
+        "productName": "Pilas AA",
+        "quantity": 4,
+        "unit": "unidad",
+        "category": "SIN_CATEGORIA"
+      }
+    }
+  ]
+}
