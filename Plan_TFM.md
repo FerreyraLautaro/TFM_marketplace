@@ -101,15 +101,23 @@ endpoint de normalización funciona.
 
 - [x] ~~Mercado Pago sandbox detrás de `PaymentProvider`~~ → descartado: se mantiene `FakePaymentProvider` (decisión 2026-11-20)
 - [x] Webhook idempotente **simulado** que pasa la orden a PAID (`POST /payments/webhook` con firma HMAC; checkout simulado en `POST /payments/:reference/simulate`)
-- [ ] Despliegue en Railway con variables de entorno y seeds (se va completando en cada PR)
+- [x] Despliegue en Railway con variables de entorno y seeds
   - [x] Seeds de demo al arrancar con `SEED_DEMO_DATA=true`: 1 BUYER, 3 SELLERS (5/10/15%) y 10 productos; idempotente, contraseñas por variables de entorno
-- [ ] README completo (ver checklist de entrega; se va completando)
+- [x] README completo (faltan solo las URLs de slides y video)
 - [ ] Slides de presentación (hechas con Claude)
 - [ ] Demo interactiva: página HTML/SPA (artifact de Claude) que muestra los flujos principales y permite elegir qué respuesta llega en cada paso (éxito, 400, 403, 404, 409), como alternativa más clara que Swagger
 - [ ] Video con captura de pantalla, filmado por mí usando los endpoints (guion preparado con Claude)
 - [ ] Formulario de entrega enviado
 
 **Terminado cuando:** el formulario de entrega está enviado.
+
+### Próximos pasos (para retomar en otra sesión)
+
+1. **Demo interactiva** (artifact HTML/SPA): flujos principales (login, compra multi-seller, pago con webhook e idempotencia, avance de suborders, normalizador) con respuestas seleccionables (éxito, 400, 403, 404, 409).
+2. **Slides:** contenido desde "Decisiones", la Bitácora y la evaluación v1 vs v2 (`eval/reports/comparacion-v1-vs-v2.md`).
+3. **Guion del video:** recorrido en Swagger de producción con los usuarios del seed (ver "Recorrido sugerido" en el README).
+4. **Completar URLs** de slides y video en el README y enviar el formulario (con las contraseñas de los usuarios de prueba).
+5. Opcional si sobra tiempo: dataset reservado para validar que el prompt v2 generaliza; recuperar el spec de `HealthController`.
 
 > **Prioridad:** nunca se recorta el núcleo del marketplace ni la parte de IA. El onboarding tiene prioridad.
 
@@ -118,17 +126,17 @@ endpoint de normalización funciona.
 ## Checklist de entrega (documentación del máster)
 
 **README.md**
-- [ ] Descripción general
-- [ ] Stack tecnológico
-- [ ] Instalación y ejecución
-- [ ] Estructura del proyecto
-- [ ] Funcionalidades principales
-- [ ] Usuarios de prueba (un BUYER y un SELLER)
-- [ ] URLs de despliegue, slides y video
+- [x] Descripción general
+- [x] Stack tecnológico
+- [x] Instalación y ejecución
+- [x] Estructura del proyecto
+- [x] Funcionalidades principales
+- [x] Usuarios de prueba (un BUYER y un SELLER; contraseñas en el formulario, no en el repo)
+- [ ] URLs de despliegue, slides y video (despliegue listo; faltan slides y video)
 
 **Otros**
-- [ ] Repositorio público en GitHub
-- [ ] Despliegue en Railway (recomendado)
+- [x] Repositorio público en GitHub
+- [x] Despliegue en Railway (recomendado)
 - [ ] Slides con URL pública o en el repo
 - [ ] Video con captura de pantalla (cámara opcional)
 - [ ] Formulario: nombre, email, URLs (repo, despliegue, slides, video), usuario de prueba

@@ -32,7 +32,7 @@ npm run test:e2e                # e2e (test/jest-e2e.json, *.e2e-spec.ts) contra
 
 ## Arquitectura y estado actual
 
-- NestJS 11 + TypeORM + PostgreSQL. **Semanas 1 y 2 cerradas**: config, `/health`, Railway, migraciones, auth JWT con roles, productos, Swagger, órdenes con suborders, máquinas de estado, eventos en memoria y pago simulado. Siguiente: Semana 3 (normalizador con Gemini).
+- NestJS 11 + TypeORM + PostgreSQL. **Semanas 1, 2 y 3 cerradas, webhook, seeds y README listos.** Quedan los entregables con Claude (demo interactiva, slides, guion del video) y el formulario: ver "Próximos pasos" en Plan_TFM.md. Normalizador con Gemini (`src/llm/`, `src/catalog/`) con prompt v2 activo y evaluación en `eval/`.
 - Nest corre en el host (Windows) y Postgres en Docker: por eso `host: 'localhost'`. El nombre del contenedor/servicio solo resuelve si Nest también corre dentro de la red del compose.
 - La imagen `postgres:16` guarda los datos en `/var/lib/postgresql/data` (no en `/var/lib/postgresql`, que es la convención de Postgres 18+). `POSTGRES_DB` solo se aplica con el volumen vacío; sin él, la única base creada es `postgres`.
 - Módulos: `ConfigurationModule` (`src/config/`, zod en `env.schema.ts`, incluye `JWT_SECRET` y `JWT_EXPIRES_IN`), `DatabaseModule` (`src/database/`), `HealthModule` (`GET /health`, Terminus), `UsersModule` (`src/users/`, roles `BUYER`/`SELLER`), `AuthModule` (`src/auth/`: register/login/me, `JwtAuthGuard`, `@Roles()` + `RolesGuard` que va después de `JwtAuthGuard`, `@CurrentUser()`), `ProductsModule` (`src/products/`, lectura pública, escritura solo del seller dueño; la regla de propiedad vive en el servicio).
