@@ -1,14 +1,17 @@
 export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
 
-export interface ChargeRequest {
+export interface CreatePaymentRequest {
   orderId: string;
   amount: number;
 }
 
-export interface ChargeResult {
+export interface CreatePaymentResult {
+  // Provider-side identifier; the webhook refers to the payment by it.
   reference: string;
 }
 
+// Payments are asynchronous: creating one only registers it with the provider,
+// which later reports the result through the payment webhook.
 export interface PaymentProvider {
-  charge(request: ChargeRequest): Promise<ChargeResult>;
+  createPayment(request: CreatePaymentRequest): Promise<CreatePaymentResult>;
 }

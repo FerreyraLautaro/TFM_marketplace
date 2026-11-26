@@ -13,6 +13,8 @@ export const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   // Access token lifetime in seconds.
   JWT_EXPIRES_IN: z.coerce.number().int().positive().default(3600),
+  // Shared with the payment provider to sign webhooks (HMAC-SHA256).
+  PAYMENT_WEBHOOK_SECRET: z.string().min(32),
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODEL: z.string().min(1),
   GEMINI_RPM: z.coerce.number().int().positive().default(15),

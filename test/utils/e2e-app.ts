@@ -19,8 +19,10 @@ export async function createE2eApp(
     builder.overrideProvider(token).useValue(useValue);
   }
   const moduleRef = await builder.compile();
+  // Same rawBody option as main.ts: webhook signatures are verified on the raw bytes.
   const app = moduleRef.createNestApplication<INestApplication<App>>({
     logger: ['error'],
+    rawBody: true,
   });
   setupApp(app);
   await app.init();
@@ -37,6 +39,6 @@ export async function resetDatabase(app: INestApplication): Promise<void> {
   await app
     .get(DataSource)
     .query(
-      'TRUNCATE "normalization_run", "order_item", "sub_order", "order", "product", "user" RESTART IDENTITY CASCADE',
+      'TRUNCATE "processed_webhook_event", "payment", "normalization_run", "order_item", "sub_order", "order", "product", "user" RESTART IDENTITY CASCADE',
     );
 }

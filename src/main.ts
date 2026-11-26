@@ -4,7 +4,8 @@ import { AppModule } from './app.module';
 import { setupApp } from './app.setup';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody keeps the exact request bytes, needed to verify webhook signatures.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   setupApp(app);
 
   const swaggerConfig = new DocumentBuilder()

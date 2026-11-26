@@ -100,7 +100,7 @@ endpoint de normalización funciona.
 ## Modo reducido · Ya en Cencosud (4–6 h/semana)
 
 - [x] ~~Mercado Pago sandbox detrás de `PaymentProvider`~~ → descartado: se mantiene `FakePaymentProvider` (decisión 2026-11-20)
-- [ ] Webhook idempotente **simulado** que pasa la orden a PAID (mismo `PaymentProvider`; un reintento del mismo evento no cambia nada)
+- [x] Webhook idempotente **simulado** que pasa la orden a PAID (`POST /payments/webhook` con firma HMAC; checkout simulado en `POST /payments/:reference/simulate`)
 - [ ] Despliegue en Railway con variables de entorno y seeds (se va completando en cada PR; seeds con un BUYER, un SELLER y comisiones de 5/10/15%)
 - [ ] README completo (ver checklist de entrega; se va completando)
 - [ ] Slides de presentación (hechas con Claude)
@@ -198,6 +198,11 @@ endpoint de normalización funciona.
 - **Prompt v2 dirigido por errores medidos.** Cada regla corrige una causa observada en la v1 ("X KG" como venta por peso, quesos, galletitas, estilo de nombre). Los ejemplos no pueden ser ítems del dataset (data leakage) y un test lo garantiza.
 - **Limitación conocida:** la v2 se ajustó mirando el mismo dataset con el que se evalúa; para afirmar que generaliza haría falta un segundo dataset reservado.
 - **Costo vs precisión:** la v2 usa 2,5× tokens de entrada por llamada (reglas y ejemplos) por +12,5 pp. Con Flash-Lite y este volumen es despreciable; a escala es una decisión de negocio.
+- **Pago asíncrono confirmado por webhook.** `pay` solo crea un pago `PENDING`; la orden pasa a `PAID` cuando el proveedor confirma por webhook, como en Mercado Pago o Stripe. El checkout simulado usa exactamente el mismo camino firmado que un webhook real.
+- **Webhook firmado con HMAC sobre los bytes crudos.** Comparación en tiempo constante; sin firma válida, 401 y nada registrado. Sin esto, cualquiera podría marcar órdenes como pagadas.
+- **Idempotencia "reclamar primero".** El ID del evento se inserta con `ON CONFLICT DO NOTHING` en la misma transacción: si ya existía, es un reintento del proveedor y no cambia nada. `pay` también es idempotente (un índice único parcial impide dos pagos pendientes por orden).
+- **El webhook responde 200 aunque ignore el evento.** Un error haría que el proveedor reintente indefinidamente; el caso queda registrado con su motivo.
+- **Orden cancelada con pago aprobado → `REFUND_REQUIRED`.** Los reembolsos están fuera de alcance, pero el caso se detecta y se registra en lugar de perderse.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM

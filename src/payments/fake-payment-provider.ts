@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { ChargeResult, PaymentProvider } from './payment-provider';
+import { CreatePaymentResult, PaymentProvider } from './payment-provider';
 
-// Stands in for Mercado Pago until the sandbox integration: every charge is approved.
+// Stands in for a real provider: it only hands out a reference. The result
+// arrives later through POST /payments/:reference/simulate, which signs and
+// delivers the webhook the provider would send.
 @Injectable()
 export class FakePaymentProvider implements PaymentProvider {
-  charge(): Promise<ChargeResult> {
+  createPayment(): Promise<CreatePaymentResult> {
     return Promise.resolve({ reference: `fake-${randomUUID()}` });
   }
 }

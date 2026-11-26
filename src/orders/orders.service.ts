@@ -5,12 +5,24 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 import { EVENT_PUBLISHER, EventPublisher } from '../events/event-publisher';
 import {
   PAYMENT_PROVIDER,
   PaymentProvider,
 } from '../payments/payment-provider';
+import { PaymentStatus } from '../payments/payment-status.enum';
+import { PaymentSummary, toPaymentSummary } from '../payments/payment-summary';
+import {
+  ONE_PENDING_PAYMENT_PER_ORDER,
+  Payment,
+} from '../payments/payment.entity';
 import { Product } from '../products/product.entity';
 import { User } from '../users/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -33,6 +45,8 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
+    @InjectRepository(Payment)
+    private readonly paymentsRepository: Repository<Payment>,
     @Inject(PAYMENT_PROVIDER) private readonly payments: PaymentProvider,
     @Inject(EVENT_PUBLISHER) private readonly events: EventPublisher,
   ) {}
@@ -94,30 +108,52 @@ export class OrdersService {
     return order;
   }
 
-  // The charge happens outside any transaction so no row lock is held while
-  // waiting on the provider; the compare-and-set update still rejects a race.
-  async pay(id: string, buyerId: string): Promise<Order> {
+  // Idempotent: paying again while a payment is pending returns that payment.
+  // The order only becomes PAID when the provider's webhook approves it.
+  async pay(id: string, buyerId: string): Promise<PaymentSummary> {
     const order = await this.findOneForBuyer(id, buyerId);
     assertOrderTransition(order.status, OrderStatus.PAID);
 
-    const payment = await this.payments.charge({
-      orderId: order.id,
+    const open = await this.paymentsRepository.find({
+      where: {
+        orderId: id,
+        status: In([PaymentStatus.PENDING, PaymentStatus.APPROVED]),
+      },
+    });
+    if (open.some((payment) => payment.status === PaymentStatus.APPROVED)) {
+      throw new ConflictException('Order already has an approved payment');
+    }
+    const pending = open.find((p) => p.status === PaymentStatus.PENDING);
+    if (pending) {
+      return toPaymentSummary(pending);
+    }
+
+    // Outside any transaction so no lock is held while waiting on the provider.
+    const { reference } = await this.payments.createPayment({
+      orderId: id,
       amount: order.total,
     });
-    await transitionStatus(
-      this.dataSource.manager,
-      Order,
-      id,
-      order.status,
-      OrderStatus.PAID,
-    );
-
-    this.events.publish<OrderEvent>({
-      type: 'OrderPaid',
-      orderId: id,
-      paymentReference: payment.reference,
-    });
-    return this.findOneForBuyer(id, buyerId);
+    try {
+      const payment = await this.paymentsRepository.save(
+        this.paymentsRepository.create({
+          orderId: id,
+          reference,
+          amount: order.total,
+          status: PaymentStatus.PENDING,
+        }),
+      );
+      return toPaymentSummary(payment);
+    } catch (error) {
+      // A concurrent request stored its pending payment first: return that one.
+      if (!isViolationOf(error, ONE_PENDING_PAYMENT_PER_ORDER)) {
+        throw error;
+      }
+      const winner = await this.paymentsRepository.findOneByOrFail({
+        orderId: id,
+        status: PaymentStatus.PENDING,
+      });
+      return toPaymentSummary(winner);
+    }
   }
 
   async cancel(id: string, buyerId: string): Promise<Order> {
@@ -202,6 +238,17 @@ function assertOrderTransition(from: OrderStatus, to: OrderStatus): void {
   if (!canTransitionOrder(from, to)) {
     throw new ConflictException(`Cannot change order from ${from} to ${to}`);
   }
+}
+
+function isViolationOf(error: unknown, constraint: string): boolean {
+  if (!(error instanceof QueryFailedError)) {
+    return false;
+  }
+  const driverError = error.driverError as {
+    code?: string;
+    constraint?: string;
+  };
+  return driverError.code === '23505' && driverError.constraint === constraint;
 }
 
 function mergeQuantities(items: OrderItemInputDto[]): Map<string, number> {
