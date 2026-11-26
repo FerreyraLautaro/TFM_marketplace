@@ -101,7 +101,8 @@ endpoint de normalización funciona.
 
 - [x] ~~Mercado Pago sandbox detrás de `PaymentProvider`~~ → descartado: se mantiene `FakePaymentProvider` (decisión 2026-11-20)
 - [x] Webhook idempotente **simulado** que pasa la orden a PAID (`POST /payments/webhook` con firma HMAC; checkout simulado en `POST /payments/:reference/simulate`)
-- [ ] Despliegue en Railway con variables de entorno y seeds (se va completando en cada PR; seeds con un BUYER, un SELLER y comisiones de 5/10/15%)
+- [ ] Despliegue en Railway con variables de entorno y seeds (se va completando en cada PR)
+  - [x] Seeds de demo al arrancar con `SEED_DEMO_DATA=true`: 1 BUYER, 3 SELLERS (5/10/15%) y 10 productos; idempotente, contraseñas por variables de entorno
 - [ ] README completo (ver checklist de entrega; se va completando)
 - [ ] Slides de presentación (hechas con Claude)
 - [ ] Demo interactiva: página HTML/SPA (artifact de Claude) que muestra los flujos principales y permite elegir qué respuesta llega en cada paso (éxito, 400, 403, 404, 409), como alternativa más clara que Swagger
@@ -203,6 +204,7 @@ endpoint de normalización funciona.
 - **Idempotencia "reclamar primero".** El ID del evento se inserta con `ON CONFLICT DO NOTHING` en la misma transacción: si ya existía, es un reintento del proveedor y no cambia nada. `pay` también es idempotente (un índice único parcial impide dos pagos pendientes por orden).
 - **El webhook responde 200 aunque ignore el evento.** Un error haría que el proveedor reintente indefinidamente; el caso queda registrado con su motivo.
 - **Orden cancelada con pago aprobado → `REFUND_REQUIRED`.** Los reembolsos están fuera de alcance, pero el caso se detecta y se registra en lugar de perderse.
+- **Datos de demo al arrancar, activados por variable.** Las contraseñas de los usuarios de prueba vienen de variables de entorno: el repo es público y no puede tenerlas. El seed es idempotente (no duplica ni pisa contraseñas) y, si falla, se loguea sin tirar la app: los datos de demo no son críticos.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 
 ## Después del TFM
