@@ -41,6 +41,7 @@ Varios vendedores (sellers) publican productos y los compradores (buyers) arman 
 | Pagos | `POST /payments/webhook`, `POST /payments/:reference/simulate` | Webhook con firma HMAC e idempotente por evento; `simulate` hace de checkout del proveedor. |
 | Catálogo (IA) | `POST /catalog/normalize` | Solo sellers. Propone la normalización de un título; no modifica productos. |
 | Salud | `GET /health` | Verifica la conexión a la base (lo usa Railway para validar cada deploy). |
+| Demo | `GET /demo` | Página que ejecuta el flujo principal paso a paso contra la API real. |
 
 Más detalles de diseño:
 

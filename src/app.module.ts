@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ConfigurationModule } from './config/configuration.module';
 import { DatabaseModule } from './database/database.module';
+import { DemoModule } from './demo/demo.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
     OrdersModule,
     CatalogModule,
     SeedModule,
+    DemoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

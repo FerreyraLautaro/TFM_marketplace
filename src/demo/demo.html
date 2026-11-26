@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketplace · Demo</title>
+<style>
+  :root {
+    --dark: #13221B; --light: #F5F3EC; --alt: #E8E4D8; --card: #FBFAF6;
+    --accent: #E8833A; --accent-ink: #B4561A; --muted: #4A5A52;
+    --ok: #2E7D4F; --warn: #C0661E; --err: #B3261E;
+    --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--light); color: var(--dark);
+    font: 18px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10; background: var(--dark); color: var(--light);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 28px;
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  header h1 span { color: var(--accent); }
+  header .meta { font-size: 16px; opacity: .9; }
+  header .meta b { color: var(--accent); font-weight: 600; }
+  header .spacer { flex: 1; }
+  header a { color: var(--light); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
+  .intro { color: var(--muted); margin: 0 0 20px; }
+  section.step {
+    background: var(--card); border: 1px solid var(--alt); border-left: 6px solid var(--alt);
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  section.step.done { border-left-color: var(--ok); }
+  section.step.ready { border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 4px; font-size: 22px; display: flex; align-items: center; gap: 12px; }
+  .num {
+    display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--dark); color: var(--light); font-size: 18px; flex: none;
+  }
+  .done .num { background: var(--ok); }
+  .desc { color: var(--muted); margin: 0 0 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 12px; }
+  label { display: flex; flex-direction: column; font-size: 15px; color: var(--muted); gap: 4px; }
+  input, textarea, select {
+    font: inherit; font-size: 17px; padding: 8px 10px; border: 1px solid #C9C3B3;
+    border-radius: 6px; background: #fff; color: var(--dark); min-width: 260px;
+  }
+  textarea { width: 100%; min-height: 60px; }
+  input.qty { min-width: 0; width: 70px; }
+  button {
+    font: inherit; font-size: 17px; font-weight: 600; padding: 9px 18px; border-radius: 6px;
+    border: 0; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--accent-ink); }
+  button.secondary { background: var(--alt); color: var(--dark); }
+  button.secondary:hover:not(:disabled) { background: #D9D3C3; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .hint { font-size: 15px; color: var(--accent-ink); }
+  .panel { margin-top: 12px; border-radius: 8px; overflow: hidden; border: 1px solid var(--alt); }
+  .panel .req {
+    background: var(--dark); color: var(--light); padding: 8px 14px; font-family: var(--mono);
+    font-size: 15px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .badge { padding: 2px 10px; border-radius: 999px; font-weight: 700; color: #fff; }
+  .s2 { background: var(--ok); } .s4 { background: var(--warn); } .s5, .s0 { background: var(--err); }
+  .panel pre {
+    margin: 0; padding: 12px 14px; background: #fff; font: 14px/1.45 var(--mono);
+    max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  }
+  .panel pre.body { background: var(--alt); max-height: 160px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 16px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--alt); }
+  th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: uppercase; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .seller-row td { background: var(--alt); font-weight: 600; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 10px 0; }
+  .card { border: 1px solid var(--alt); border-radius: 8px; padding: 12px 14px; background: #fff; }
+  .card h3 { margin: 0 0 6px; font-size: 18px; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--alt); }
+  .pill.PAID, .pill.APPROVED, .pill.DELIVERED { background: var(--ok); color: #fff; }
+  .pill.PENDING { background: var(--accent); color: #fff; }
+  .pill.ACCEPTED, .pill.SHIPPED { background: var(--dark); color: var(--light); }
+  .big { font-size: 20px; font-weight: 700; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Marketplace <span>Demo</span></h1>
+  <div class="meta">API: <b id="apiBase"></b></div>
+  <div class="meta">Sesión: <b id="who">sin sesión</b></div>
+  <div class="spacer"></div>
+  <a href="/docs" target="_blank" rel="noopener">Swagger (/docs)</a>
+  <button class="secondary" id="reset">Reiniciar</button>
+</header>
+<main>
+  <p class="intro">Cada paso llama a la API real de este servidor. Se muestran la petición, el código de estado y la respuesta.</p>
+
+  <section class="step" data-step="1">
+    <h2><span class="num">1</span>Registrar un comprador</h2>
+    <p class="desc">Crea un usuario nuevo con rol BUYER. El comprador de prueba <code>comprador@example.com</code> ya existe en la base.</p>
+    <div class="row">
+      <label>Email <input id="regEmail"></label>
+      <label>Contraseña (mín. 8) <input id="regPassword" value="demo12345"></label>
+      <button id="btnRegister">Registrar</button>
+    </div>
+    <div id="out1"></div>
+  </section>
+
+  <section class="step" data-step="2">
+    <h2><span class="num">2</span>Login del comprador</h2>
+    <p class="desc">Obtiene el JWT y consulta <code>GET /auth/me</code> con él.</p>
+    <div class="row">
+      <label>Email <input id="buyerEmail" value="comprador@example.com"></label>
+      <label>Contraseña <input id="buyerPassword" value="buyer1234"></label>
+      <button class="secondary" id="useRegistered">Usar el registrado</button>
+      <button id="btnBuyerLogin">Iniciar sesión</button>
+    </div>
+    <div id="sum2"></div>
+    <div id="out2"></div>
+  </section>
+
+  <section class="step" data-step="3">
+    <h2><span class="num">3</span>Elegir productos</h2>
+    <p class="desc">Catálogo público. Se preseleccionan productos de varios vendedores para que la orden se divida.</p>
+    <div class="row"><button id="btnProducts">Listar productos</button></div>
+    <div id="sum3"></div>
+    <div id="out3"></div>
+  </section>
+
+  <section class="step" data-step="4">
+    <h2><span class="num">4</span>Crear la orden</h2>
+    <p class="desc">Una orden con una suborder por vendedor; cada suborder copia la comisión de su vendedor.</p>
+    <div class="row"><button id="btnOrder">Crear orden</button><span class="hint" id="hint4"></span></div>
+    <div id="sum4"></div>
+    <div id="out4"></div>
+  </section>
+
+  <section class="step" data-step="5">
+    <h2><span class="num">5</span>Iniciar el pago</h2>
+    <p class="desc">El pago es asíncrono: queda PENDING hasta que el proveedor confirme por webhook.</p>
+    <div class="row"><button id="btnPay">Pagar</button><span class="hint" id="hint5"></span></div>
+    <div id="sum5"></div>
+    <div id="out5"></div>
+  </section>
+
+  <section class="step" data-step="6">
+    <h2><span class="num">6</span>Autorizar el pago (checkout simulado)</h2>
+    <p class="desc">El proveedor simulado firma un evento <code>payment.updated</code> y lo entrega por el mismo camino que el webhook real.</p>
+    <div class="row">
+      <button id="btnApprove">Aprobar pago</button>
+      <button class="secondary" id="btnReplay">Reenviar el mismo evento</button>
+      <span class="hint" id="hint6"></span>
+    </div>
+    <div id="sum6"></div>
+    <div id="out6"></div>
+  </section>
+
+  <section class="step" data-step="7">
+    <h2><span class="num">7</span>El vendedor despacha su suborder</h2>
+    <p class="desc">Cada vendedor ve solo sus suborders y las avanza: PENDING → ACCEPTED → SHIPPED → DELIVERED.</p>
+    <div class="row">
+      <label>Email <input id="sellerEmail" value="vendedor@example.com"></label>
+      <label>Contraseña <input id="sellerPassword" value="seller1234"></label>
+      <button id="btnSeller">Login y listar suborders</button>
+    </div>
+    <div class="row">
+      <button class="secondary" data-status="ACCEPTED">Aceptar</button>
+      <button class="secondary" data-status="SHIPPED">Enviar</button>
+      <button class="secondary" data-status="DELIVERED">Entregar</button>
+      <span class="hint" id="hint7"></span>
+    </div>
+    <div id="sum7"></div>
+    <div id="out7"></div>
+  </section>
+
+  <section class="step" data-step="8">
+    <h2><span class="num">8</span>Normalizar un título con IA</h2>
+    <p class="desc">Como vendedor, propone marca, nombre, cantidad, unidad y categoría. Llama a Gemini: puede tardar unos segundos o responder 503 si el modelo no está disponible.</p>
+    <textarea id="rawText">QUESO CREMOSO LA SERENISIMA X KG</textarea>
+    <div class="row" style="margin-top:12px"><button id="btnNormalize">Normalizar</button><span class="hint" id="hint8"></span></div>
+    <div id="sum8"></div>
+    <div id="out8"></div>
+  </section>
+</main>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const money = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+const fmt = (amount) => money.format(Number(amount));
+
+let state;
+function initialState() {
+  return {
+    registered: null, buyerToken: null, sellerToken: null, who: null,
+    products: [], sellerNames: {}, order: null, payment: null, eventId: null,
+    paid: false, subOrder: null, normalized: false,
+  };
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+// Every call is rendered: request line, body, status and response. Errors are never swallowed.
+async function call(outId, method, path, options = {}) {
+  const headers = {};
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  if (options.token) headers.Authorization = 'Bearer ' + options.token;
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.innerHTML = '<div class="req"><span>' + esc(method) + ' ' + esc(path) + '</span>'
+    + (options.token ? '<span style="opacity:.7">Bearer …' + esc(options.token.slice(-8)) + '</span>' : '')
+    + '<span class="badge s0">…</span></div>'
+    + (options.body !== undefined ? '<pre class="body">' + esc(JSON.stringify(options.body, null, 2)) + '</pre>' : '')
+    + '<pre>Esperando respuesta…</pre>';
+  if (!options.append) $(outId).replaceChildren();
+  $(outId).appendChild(panel);
+  const badge = panel.querySelector('.badge');
+  const pre = panel.querySelector('pre:last-child');
+  let status = 0;
+  let data = null;
+  try {
+    const res = await fetch(path, {
+      method, headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+    status = res.status;
+    const text = await res.text();
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    pre.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+  } catch (error) {
+    pre.textContent = 'Error de red: ' + error.message;
+  }
+  badge.textContent = status || 'sin respuesta';
+  badge.className = 'badge s' + String(status)[0];
+  return { ok: status >= 200 && status < 300, status, data };
+}
+
+function sellerLabel(sellerId) {
+  return state.sellerNames[sellerId] || 'Vendedor ' + sellerId.slice(0, 8);
+}
+
+function setWho(email, role) {
+  state.who = email + ' (' + role + ')';
+  $('who').textContent = state.who;
+}
+
+// Enables each step only when its prerequisites exist and explains what is missing.
+function refresh() {
+  const checks = {
+    btnOrder: [state.buyerToken && state.products.length, 'Requiere login del comprador (paso 2) y productos (paso 3).', 'hint4'],
+    btnPay: [state.order && !state.paid, state.paid ? 'La orden ya está pagada.' : 'Requiere una orden (paso 4).', 'hint5'],
+    btnApprove: [state.payment && !state.paid, state.paid ? 'Pago aprobado.' : 'Requiere un pago PENDING (paso 5).', 'hint6'],
+    btnReplay: [state.eventId, '', null],
+    btnSeller: [state.order, '', null],
+    btnNormalize: [state.sellerToken, 'Requiere login del vendedor (paso 7).', 'hint8'],
+  };
+  for (const [id, [ok, hint, hintId]] of Object.entries(checks)) {
+    $(id).disabled = !ok;
+    if (hintId) $(hintId).textContent = ok ? '' : hint;
+  }
+  const canAdvance = state.sellerToken && state.subOrder;
+  document.querySelectorAll('[data-status]').forEach((b) => { b.disabled = !canAdvance; });
+  $('hint7').textContent = !state.order ? 'Requiere una orden (paso 4).'
+    : !state.paid ? 'Para aceptar, la orden debe estar pagada (paso 6).' : '';
+  const done = { 1: state.registered, 2: state.buyerToken, 3: state.products.length, 4: state.order,
+    5: state.payment, 6: state.paid, 7: state.subOrder && state.subOrder.status === 'DELIVERED', 8: state.normalized };
+  document.querySelectorAll('section.step').forEach((s) => {
+    const n = s.dataset.step;
+    s.classList.toggle('done', Boolean(done[n]));
+  });
+}
+
+function reset() {
+  state = initialState();
+  $('regEmail').value = 'demo+' + Date.now() + '@example.com';
+  $('who').textContent = 'sin sesión';
+  document.querySelectorAll('[id^="out"], [id^="sum"]').forEach((el) => el.replaceChildren());
+  refresh();
+}
+
+// 1. Register
+$('btnRegister').onclick = async () => {
+  const body = { email: $('regEmail').value.trim(), password: $('regPassword').value, role: 'BUYER' };
+  const r = await call('out1', 'POST', '/auth/register', { body });
+  if (r.ok) { state.registered = { email: body.email, password: body.password }; setWho(body.email, 'BUYER'); }
+  refresh();
+};
+
+// 2. Buyer login + /auth/me
+$('useRegistered').onclick = () => {
+  if (!state.registered) { $('sum2').innerHTML = '<p class="hint">Primero registrá un usuario en el paso 1.</p>'; return; }
+  $('buyerEmail').value = state.registered.email;
+  $('buyerPassword').value = state.registered.password;
+};
+$('btnBuyerLogin').onclick = async () => {
+  $('sum2').replaceChildren();
+  const body = { email: $('buyerEmail').value.trim(), password: $('buyerPassword').value };
+  const r = await call('out2', 'POST', '/auth/login', { body });
+  if (!r.ok) { state.buyerToken = null; refresh(); return; }
+  state.buyerToken = r.data.accessToken;
+  const me = await call('out2', 'GET', '/auth/me', { token: state.buyerToken, append: true });
+  if (me.ok) {
+    setWho(me.data.email, me.data.role);
+    $('sum2').innerHTML = '<dl class="kv"><dt>Token</dt><dd><code>' + esc(state.buyerToken.slice(0, 18)) + '…'
+      + esc(state.buyerToken.slice(-10)) + '</code></dd><dt>Usuario</dt><dd>' + esc(me.data.email)
+      + '</dd><dt>Rol</dt><dd>' + esc(me.data.role) + '</dd></dl>';
+  }
+  refresh();
+};
+
+// 3. Products, grouped by seller with quantity inputs
+$('btnProducts').onclick = async () => {
+  const r = await call('out3', 'GET', '/products');
+  state.products = r.ok && Array.isArray(r.data) ? r.data : [];
+  const bySeller = {};
+  for (const p of state.products) (bySeller[p.sellerId] ||= []).push(p);
+  let rows = '';
+  for (const [sellerId, products] of Object.entries(bySeller)) {
+    rows += '<tr class="seller-row"><td colspan="3">' + esc(sellerLabel(sellerId)) + '</td></tr>';
+    // Preselect one product per seller so the order splits into several sub-orders.
+    products.forEach((p, i) => {
+      rows += '<tr><td>' + esc(p.name) + '</td><td class="n">' + fmt(p.price) + '</td>'
+        + '<td class="n"><input class="qty" type="number" min="0" max="100" value="' + (i === 0 ? (Object.keys(bySeller).indexOf(sellerId) % 2) + 1 : 0)
+        + '" data-product="' + esc(p.id) + '"></td></tr>';
+    });
+  }
+  $('sum3').innerHTML = state.products.length
+    ? '<table><thead><tr><th>Producto</th><th class="n">Precio</th><th class="n">Cantidad</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<p class="hint">No hay productos. ¿Está activado SEED_DEMO_DATA?</p>';
+  refresh();
+};
+
+// 4. Order
+function renderOrder(order) {
+  const cards = (order.subOrders || []).map((so) => '<div class="card"><h3>' + esc(sellerLabel(so.sellerId))
+    + ' <span class="pill ' + esc(so.status) + '">' + esc(so.status) + '</span></h3>'
+    + '<table><tbody>' + (so.items || []).map((it) => '<tr><td>' + esc(it.quantity) + ' × ' + esc(it.productName)
+      + '</td><td class="n">' + fmt(it.subtotal) + '</td></tr>').join('') + '</tbody></table>'
+    + '<dl class="kv"><dt>Subtotal</dt><dd>' + fmt(so.subtotal) + '</dd><dt>Comisión (' + esc(so.commissionRate) + '%)</dt><dd>'
+    + fmt(so.commissionAmount) + '</dd><dt>Neto vendedor</dt><dd>' + fmt(so.sellerNet) + '</dd></dl></div>').join('');
+  return '<p>Orden <code>' + esc(order.id) + '</code> <span class="pill ' + esc(order.status) + '">' + esc(order.status)
+    + '</span> · Total <span class="big">' + fmt(order.total) + '</span></p><div class="cards">' + cards + '</div>';
+}
+$('btnOrder').onclick = async () => {
+  const items = [...document.querySelectorAll('input[data-product]')]
+    .map((input) => ({ productId: input.dataset.product, quantity: Number(input.value) }))
+    .filter((item) => item.quantity > 0);
+  const r = await call('out4', 'POST', '/orders', { token: state.buyerToken, body: { items } });
+  if (r.ok) {
+    Object.assign(state, { order: r.data, payment: null, eventId: null, paid: false, subOrder: null });
+    $('sum4').innerHTML = renderOrder(r.data);
+    ['sum5', 'sum6', 'sum7', 'out5', 'out6', 'out7'].forEach((id) => $(id).replaceChildren());
+  }
+  refresh();
+};
+
+// 5. Pay
+$('btnPay').onclick = async () => {
+  const r = await call('out5', 'POST', '/orders/' + state.order.id + '/pay', { token: state.buyerToken });
+  if (r.ok) {
+    state.payment = r.data;
+    $('sum5').innerHTML = '<dl class="kv"><dt>Referencia</dt><dd><code>' + esc(r.data.paymentReference) + '</code></dd><dt>Estado</dt><dd><span class="pill '
+      + esc(r.data.status) + '">' + esc(r.data.status) + '</span></dd><dt>Monto</dt><dd>' + fmt(r.data.amount) + '</dd></dl>';
+  }
+  refresh();
+};
+
+// 6. Simulated checkout + idempotent replay
+async function simulate(replay) {
+  if (!replay) state.eventId = 'evt-demo-' + Date.now();
+  const path = '/payments/' + encodeURIComponent(state.payment.paymentReference) + '/simulate';
+  const r = await call('out6', 'POST', path, { token: state.buyerToken, body: { status: 'APPROVED', eventId: state.eventId } });
+  if (r.ok) {
+    const o = await call('out6', 'GET', '/orders/' + state.order.id, { token: state.buyerToken, append: true });
+    if (o.ok) { state.order = o.data; state.paid = o.data.status === 'PAID'; $('sum4').innerHTML = renderOrder(o.data); }
+    const note = r.data.status === 'duplicate'
+      ? 'El evento <code>' + esc(state.eventId) + '</code> ya se había procesado: respuesta <b>duplicate</b>, no cambia nada.'
+      : 'Evento <code>' + esc(state.eventId) + '</code>: <b>' + esc(r.data.status) + '</b>' + (r.data.outcome ? ' (' + esc(r.data.outcome) + ')' : '') + '.';
+    $('sum6').innerHTML = '<p>' + note + ' Estado de la orden: <span class="pill ' + esc(state.order.status) + '">' + esc(state.order.status) + '</span></p>';
+  }
+  refresh();
+}
+$('btnApprove').onclick = () => simulate(false);
+$('btnReplay').onclick = () => simulate(true);
+
+// 7. Seller login, sub-orders and status changes
+function renderSubOrder() {
+  const so = state.subOrder;
+  $('sum7').innerHTML = so
+    ? '<p>Suborder <code>' + esc(so.id) + '</code> de ' + esc(sellerLabel(so.sellerId)) + ': <span class="pill ' + esc(so.status) + '">'
+      + esc(so.status) + '</span> · Neto ' + fmt(so.sellerNet) + '</p>'
+    : '<p class="hint">Este vendedor no tiene suborders en la orden creada. Elegí productos suyos en el paso 3.</p>';
+}
+$('btnSeller').onclick = async () => {
+  const body = { email: $('sellerEmail').value.trim(), password: $('sellerPassword').value };
+  const r = await call('out7', 'POST', '/auth/login', { body });
+  if (!r.ok) { state.sellerToken = null; refresh(); return; }
+  state.sellerToken = r.data.accessToken;
+  const me = await call('out7', 'GET', '/auth/me', { token: state.sellerToken, append: true });
+  if (me.ok) { setWho(me.data.email, me.data.role); state.sellerNames[me.data.id] = me.data.email; }
+  const list = await call('out7', 'GET', '/sub-orders', { token: state.sellerToken, append: true });
+  if (list.ok) {
+    state.subOrder = list.data.find((so) => so.orderId === state.order.id) || null;
+    renderSubOrder();
+    if (state.order) $('sum4').innerHTML = renderOrder(state.order);
+  }
+  refresh();
+};
+document.querySelectorAll('[data-status]').forEach((button) => {
+  button.onclick = async () => {
+    const r = await call('out7', 'PATCH', '/sub-orders/' + state.subOrder.id + '/status',
+      { token: state.sellerToken, body: { status: button.dataset.status } });
+    if (r.ok) { state.subOrder = r.data; renderSubOrder(); }
+    refresh();
+  };
+});
+
+// 8. AI normalizer
+$('btnNormalize').onclick = async () => {
+  $('sum8').innerHTML = '<p class="hint">Consultando al modelo…</p>';
+  const r = await call('out8', 'POST', '/catalog/normalize', { token: state.sellerToken, body: { rawText: $('rawText').value } });
+  if (r.ok) {
+    state.normalized = true;
+    const p = r.data.proposal;
+    $('sum8').innerHTML = '<dl class="kv"><dt>Marca</dt><dd>' + esc(p.brand ?? '—') + ' <span class="pill">' + esc(p.brandStatus) + '</span></dd>'
+      + '<dt>Producto</dt><dd>' + esc(p.productName) + '</dd><dt>Cantidad</dt><dd>' + esc(p.quantity ?? '—') + ' ' + esc(p.unit ?? '')
+      + '</dd><dt>Categoría</dt><dd>' + esc(p.category) + '</dd><dt>Confianza</dt><dd>' + esc(p.confidence) + '</dd>'
+      + '<dt>Modelo</dt><dd>' + esc(r.data.model) + ' · prompt ' + esc(r.data.promptVersion) + ' · ' + esc(r.data.meta.latencyMs) + ' ms, '
+      + esc(r.data.meta.attempts) + ' intento(s)</dd></dl>';
+  } else {
+    $('sum8').innerHTML = '<p class="hint">El modelo no respondió correctamente (' + esc(r.status) + '). Ver la respuesta abajo.</p>';
+  }
+  refresh();
+};
+
+$('apiBase').textContent = window.location.origin;
+$('reset').onclick = reset;
+reset();
+</script>
+</body>
+</html>
