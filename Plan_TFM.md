@@ -89,7 +89,7 @@ endpoint de normalización funciona.
 - [x] Despliegue en Railway con variables de entorno y seeds
 - [x] README completo
 - [x] Slides de presentación
-- [ ] Demo interactiva en `/demo`: ejecuta el flujo principal contra la API real (registro, login, compra, pago, suborders, normalizador)
+- [x] Demo interactiva en `/demo`: ejecuta el flujo principal contra la API real (registro, login, compra, pago, suborders, normalizador)
 - [ ] Video con captura de pantalla
 - [ ] Formulario de entrega
 
@@ -183,6 +183,8 @@ endpoint de normalización funciona.
 - **Datos de demo al arrancar, activados por variable.** Las contraseñas de los usuarios de prueba vienen de variables de entorno. El seed es idempotente (no duplica ni pisa contraseñas) y, si falla, se loguea sin tirar la app: los datos de demo no son críticos.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
 - **Demo interactiva servida por la propia API (`/demo`).** Mismo origen que la API: no hace falta habilitar CORS y se despliega junto con la app. Ejecuta los endpoints reales, así que muestra el comportamiento verdadero y no una simulación.
+
+- **Módulos organizados en capas (`domain/`, `application/`, `infrastructure/`, `http/`).** Las reglas de negocio quedan separadas de los adaptadores (Gemini, proveedor de pagos, eventos) y de HTTP; las interfaces de dependencias externas viven en `application/ports/`. Es un hexagonal liviano: las entidades TypeORM siguen siendo el modelo de dominio, para no duplicar modelos y mappers en el alcance del TFM. Los módulos de soporte (config, database, health, seed, demo) quedan planos.
 
 ## Después del TFM
 
