@@ -1,98 +1,148 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Marketplace de supermercado · API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST de un marketplace multi-vendedor de supermercado, con un **normalizador de catálogo basado en IA**. Trabajo Final de Máster.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- **API en producción:** https://tfmmarketplace-production.up.railway.app
+- **Documentación interactiva (Swagger):** https://tfmmarketplace-production.up.railway.app/docs
+- **Slides:** _pendiente_
+- **Video:** _pendiente_
 
-## Description
+## Descripción general
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Varios vendedores (sellers) publican productos y los compradores (buyers) arman un carrito con productos de distintos vendedores. La API:
 
-## Project setup
+- **Divide cada orden en suborders por vendedor**, cada una con su propia máquina de estados y su comisión.
+- **Guarda una foto de la compra:** nombre y precio de cada ítem quedan fijos aunque el producto cambie o se borre después.
+- **Cobra de forma asíncrona:** el pago se confirma con un webhook firmado e idempotente, como en los proveedores reales (simulado; Mercado Pago quedó fuera de alcance).
+- **Normaliza el catálogo con un LLM (Gemini):** convierte títulos "sucios" (`LECHE SERENISIMA ENTERA 1LT`) en datos estructurados (marca, producto, cantidad, unidad y categoría), con una evaluación medida contra un dataset etiquetado.
+
+## Stack tecnológico
+
+| Área | Tecnología |
+|---|---|
+| Lenguaje y framework | TypeScript, NestJS 11, Node.js 24 |
+| Base de datos | PostgreSQL 16, TypeORM 1.1 con migraciones |
+| Autenticación | JWT (Passport), bcrypt, roles `BUYER` / `SELLER` |
+| Validación | zod (variables de entorno), class-validator (requests) |
+| IA | Gemini API (`@google/genai`), modelo `gemini-3.5-flash-lite`, salida estructurada |
+| Documentación | Swagger / OpenAPI (`@nestjs/swagger`) |
+| Tests | Jest (unitarios), supertest (e2e contra una base aislada) |
+| Infraestructura | Docker Compose (local), Railway (producción, con health check) |
+
+## Funcionalidades principales
+
+| Módulo | Endpoints | Qué hace |
+|---|---|---|
+| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` | Registro con rol, login con JWT. El mismo error para email inexistente y contraseña incorrecta. |
+| Productos | `GET /products`, `GET /products/:id`, `POST`, `PATCH`, `DELETE /products/:id` | Lectura pública; alta, edición y baja solo por el seller dueño. |
+| Órdenes | `POST /orders`, `GET /orders`, `GET /orders/:id`, `POST /orders/:id/pay`, `POST /orders/:id/cancel` | El buyer compra; la orden se divide en suborders por seller en una sola transacción. |
+| Suborders | `GET /sub-orders`, `GET /sub-orders/:id`, `PATCH /sub-orders/:id/status` | Cada seller ve y avanza solo las suyas: `PENDING → ACCEPTED → SHIPPED → DELIVERED` (o `CANCELLED`). |
+| Pagos | `POST /payments/webhook`, `POST /payments/:reference/simulate` | Webhook con firma HMAC e idempotente por evento; `simulate` hace de checkout del proveedor. |
+| Catálogo (IA) | `POST /catalog/normalize` | Solo sellers. Propone la normalización de un título; no modifica productos. |
+| Salud | `GET /health` | Verifica la conexión a la base (lo usa Railway para validar cada deploy). |
+
+Más detalles de diseño:
+
+- **Transiciones atómicas:** cada cambio de estado actualiza solo si el estado sigue siendo el esperado; si otro request ganó, responde `409`.
+- **Eventos en memoria** (`OrderCreated`, `OrderPaid`, `SubOrderStatusChanged`, `OrderCompleted`, `OrderCancelled`), publicados después del commit y visibles en los logs.
+- **Autorización por recurso:** un recurso privado ajeno responde `404`, para no revelar que existe.
+- **Comisión por seller** (por defecto 10%), copiada en cada suborder; los montos se calculan en centavos.
+- **Normalizador:** el LLM interpreta el texto y el código decide lo determinístico (conversión de unidades, marcas contra un catálogo con alias). Incluye reintentos con backoff, timeout, límite de ritmo y registro de cada llamada en `normalization_run`.
+
+### Evaluación del normalizador
+
+49 productos etiquetados (`eval/golden-dataset.json`), 2 corridas por versión de prompt, con el mismo modelo:
+
+| Llamadas que respondieron | Prompt v1 | Prompt v2 (activo) |
+|---|---|---|
+| Todos los campos objetivos correctos | 85,4% | **97,9%** |
+| Cantidad | 89,6% | 100% |
+| Categoría | 93,8% | 97,9% |
+| Tokens de entrada por llamada | 271 | 688 |
+
+Reporte completo: [`eval/reports/comparacion-v1-vs-v2.md`](eval/reports/comparacion-v1-vs-v2.md). Cómo correrla: [`eval/README.md`](eval/README.md).
+
+## Usuarios de prueba
+
+Se cargan con el seed de demo (`SEED_DEMO_DATA=true`). Las contraseñas no están en el repositorio: se configuran por variables de entorno y se informan en el formulario de entrega.
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| BUYER | `comprador@example.com` | _(ver formulario de entrega)_ |
+| SELLER (comisión 10%) | `vendedor@example.com` | _(ver formulario de entrega)_ |
+
+También hay dos sellers más, para mostrar la división de órdenes con comisiones distintas: `vendedor.mayorista@example.com` (5%) y `vendedor.bebidas@example.com` (15%), con la misma contraseña de seller. Entre los tres sellers suman 10 productos.
+
+### Recorrido sugerido en Swagger
+
+1. `POST /auth/login` como buyer y **Authorize** con el `accessToken`.
+2. `GET /products` y `POST /orders` con productos de 2 o 3 sellers: la orden vuelve dividida en suborders, con la comisión de cada seller.
+3. `POST /orders/:id/pay` devuelve una referencia de pago `PENDING`.
+4. `POST /payments/:reference/simulate` con `{ "status": "APPROVED" }`: la orden pasa a `PAID`. Repetir con el mismo `eventId` responde `duplicate` (idempotencia).
+5. Login como seller y `PATCH /sub-orders/:id/status` con `ACCEPTED`, `SHIPPED` y `DELIVERED`.
+6. Como seller, `POST /catalog/normalize` con `{ "rawText": "QUESO CREMOSO LA SERENISIMA X KG" }`.
+
+## Instalación y ejecución
+
+Requisitos: Node.js 22+, Docker y una API key de Gemini (Google AI Studio).
 
 ```bash
-$ npm install
+git clone https://github.com/FerreyraLautaro/TFM_marketplace.git
+cd TFM_marketplace
+npm install
+cp .env.example .env          # completar los valores (ver tabla)
+docker compose up -d          # PostgreSQL 16 en el puerto 5432
+npm run start:dev             # aplica las migraciones al arrancar
 ```
 
-## Compile and run the project
+La API queda en http://localhost:3000 y Swagger en http://localhost:3000/docs.
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Sí | Conexión a PostgreSQL |
+| `JWT_SECRET` | Sí | Firma de tokens (mínimo 32 caracteres) |
+| `PAYMENT_WEBHOOK_SECRET` | Sí | Firma HMAC del webhook de pagos (mínimo 32 caracteres) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Sí | Acceso a Gemini (por ejemplo `gemini-3.5-flash-lite`) |
+| `NODE_ENV` | No | `development` (por defecto), `production` o `test` |
+| `GEMINI_RPM`, `GEMINI_TIMEOUT_MS`, `GEMINI_MAX_QUEUE_WAIT_MS` | No | Límite de ritmo, timeout y espera máxima (15 / 15000 / 10000) |
+| `SEED_DEMO_DATA`, `SEED_BUYER_PASSWORD`, `SEED_SELLER_PASSWORD` | No | Datos de demo al arrancar (idempotente) |
+
+Los secretos se generan con `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. La app valida todas las variables al iniciar y no arranca si falta alguna.
+
+### Comandos
 
 ```bash
-# development
-$ npm run start
+npm run build                 # compilar
+npm run start:prod            # ejecutar lo compilado (producción)
+npm run lint && npm run format
 
-# watch mode
-$ npm run start:dev
+npm test                      # tests unitarios
+npm run test:e2e              # tests e2e (requiere Docker; usa la base marketplace_test)
 
-# production mode
-$ npm run start:prod
+npm run migration:generate -- src/database/migrations/<Nombre>
+npm run migration:run | migration:revert | migration:show
+
+npm run eval -- --prompt v2   # evaluación del normalizador (llamadas reales a Gemini)
 ```
 
-## Run tests
+## Estructura del proyecto
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```
+src/
+├── config/      Variables de entorno validadas con zod
+├── database/    Conexión TypeORM, data source del CLI y migraciones
+├── health/      GET /health (Terminus)
+├── users/       Entidad User, roles y comisión
+├── auth/        JWT, guards, @Roles, @CurrentUser
+├── products/    CRUD de productos por seller
+├── orders/      Órdenes, suborders, máquinas de estado y montos
+├── payments/    Pagos asíncronos, webhook firmado y checkout simulado
+├── events/      EventPublisher en memoria
+├── llm/         LlmProvider + Gemini (reintentos, timeout, límite de ritmo)
+├── catalog/     Normalizador, marcas, prompts versionados y evaluación
+└── seed/        Datos de demo
+eval/            Golden dataset, scripts y reportes de evaluación
+test/            Tests e2e
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Las abstracciones detrás de interfaces (`LlmProvider`, `PaymentProvider`, `EventPublisher`) permiten cambiar Gemini, el proveedor de pagos o el bus de eventos sin tocar la lógica de negocio. Las decisiones de diseño y su justificación están en la sección "Decisiones" de [`Plan_TFM.md`](Plan_TFM.md).
