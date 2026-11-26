@@ -12,6 +12,12 @@
           "introspectComments": true
         }
       }
+    ],
+    "assets": [
+      {
+        "include": "demo/*.html",
+        "watchAssets": true
+      }
     ]
   }
 }
