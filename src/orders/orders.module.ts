@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Payment } from '../payments/payment.entity';
+import { Payment } from '../payments/domain/payment.entity';
 import { PaymentsModule } from '../payments/payments.module';
-import { OrderEventsLogger } from './order-events.logger';
-import { Order } from './order.entity';
-import { OrdersController } from './orders.controller';
-import { OrdersService } from './orders.service';
-import { SubOrder } from './sub-order.entity';
-import { SubOrdersController } from './sub-orders.controller';
-import { SubOrdersService } from './sub-orders.service';
+import { OrderEventsLogger } from './infrastructure/order-events.logger';
+import { Order } from './domain/order.entity';
+import { OrdersController } from './http/orders.controller';
+import { OrdersService } from './application/orders.service';
+import { SubOrder } from './domain/sub-order.entity';
+import { SubOrdersController } from './http/sub-orders.controller';
+import { SubOrdersService } from './application/sub-orders.service';
 
 @Module({
   imports: [

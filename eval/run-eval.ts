@@ -4,19 +4,26 @@ import { Logger, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { CatalogModule } from '../src/catalog/catalog.module';
-import { CatalogNormalizerService } from '../src/catalog/catalog-normalizer.service';
-import { InvalidLlmOutputError } from '../src/catalog/catalog.errors';
-import { EvaluationResult, renderRunReport } from '../src/catalog/eval/report';
-import { GoldenItem, ItemOutcome, scoreRun } from '../src/catalog/eval/scoring';
-import { NormalizationRun } from '../src/catalog/normalization-run.entity';
+import { CatalogNormalizerService } from '../src/catalog/application/catalog-normalizer.service';
+import { InvalidLlmOutputError } from '../src/catalog/domain/catalog.errors';
+import {
+  EvaluationResult,
+  renderRunReport,
+} from '../src/catalog/application/eval/report';
+import {
+  GoldenItem,
+  ItemOutcome,
+  scoreRun,
+} from '../src/catalog/application/eval/scoring';
+import { NormalizationRun } from '../src/catalog/domain/normalization-run.entity';
 import {
   CURRENT_PROMPT_VERSION,
   PROMPT_VERSIONS,
   PromptVersion,
-} from '../src/catalog/prompts';
+} from '../src/catalog/application/prompts';
 import { ConfigurationModule } from '../src/config/configuration.module';
 import { DatabaseModule } from '../src/database/database.module';
-import { LlmUnavailableError } from '../src/llm/llm.errors';
+import { LlmUnavailableError } from '../src/llm/application/ports/llm.errors';
 
 // Stop instead of burning quota once the provider is clearly refusing:
 // a wait longer than a minute usually means the daily quota is exhausted.

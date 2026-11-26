@@ -7,9 +7,9 @@ import {
   GEMINI_SETTINGS,
   GeminiLlmProvider,
   GeminiSettings,
-} from './gemini-llm.provider';
-import { LLM_PROVIDER } from './llm-provider';
-import { RateLimiter } from './rate-limiter';
+} from './infrastructure/gemini-llm.provider';
+import { LLM_PROVIDER } from './application/ports/llm-provider';
+import { RateLimiter } from './infrastructure/rate-limiter';
 
 @Module({
   providers: [

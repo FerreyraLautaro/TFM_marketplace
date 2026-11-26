@@ -1,4 +1,4 @@
-import { UserRole } from '../users/user-role.enum';
+import { UserRole } from '../users/domain/user-role.enum';
 
 export interface DemoUser {
   email: string;

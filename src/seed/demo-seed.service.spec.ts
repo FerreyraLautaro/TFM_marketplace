@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { DataSource, EntityManager } from 'typeorm';
 import { Env } from '../config/env.schema';
-import { UserRole } from '../users/user-role.enum';
-import { User } from '../users/user.entity';
+import { UserRole } from '../users/domain/user-role.enum';
+import { User } from '../users/domain/user.entity';
 import { DEMO_PRODUCTS, DEMO_USERS } from './demo-data';
 import { DemoSeedService } from './demo-seed.service';
 

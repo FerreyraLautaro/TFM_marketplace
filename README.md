@@ -153,6 +153,8 @@ eval/            Golden dataset, scripts y reportes de evaluación
 test/            Tests e2e
 ```
 
+Cada módulo de negocio se organiza en capas: `domain/` (entidades, enums, reglas puras y máquinas de estado), `application/` (servicios de casos de uso y `ports/` con las interfaces y tokens de dependencias externas), `infrastructure/` (adaptadores: Gemini, pago simulado, publisher en memoria, estrategia JWT) y `http/` (controllers, DTOs, guards y filtros). El `*.module.ts` queda en la raíz del módulo. Los módulos de soporte (`config`, `database`, `health`, `seed`, `demo`) quedan planos.
+
 Las abstracciones detrás de interfaces (`LlmProvider`, `PaymentProvider`, `EventPublisher`) permiten cambiar Gemini, el proveedor de pagos o el bus de eventos sin tocar la lógica de negocio. Las decisiones de diseño y su justificación están en la sección "Decisiones" de [`Plan_TFM.md`](Plan_TFM.md).
 
 ## Uso de IA en el desarrollo

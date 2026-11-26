@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
-import { UserRole } from '../src/users/user-role.enum';
+import { UserRole } from '../src/users/domain/user-role.enum';
 import { Actor, registerActor } from './utils/actors';
 import { createE2eApp, resetDatabase } from './utils/e2e-app';
 

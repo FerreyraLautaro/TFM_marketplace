@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import { EVENT_PUBLISHER } from './event-publisher';
-import { InMemoryEventPublisher } from './in-memory-event-publisher';
+import { EVENT_PUBLISHER } from './application/ports/event-publisher';
+import { InMemoryEventPublisher } from './infrastructure/in-memory-event-publisher';
 
 @Global()
 @Module({

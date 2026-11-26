@@ -2,10 +2,16 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { EVENT_PUBLISHER, EventPublisher } from '../src/events/event-publisher';
-import { ORDER_EVENT_TYPES, OrderEvent } from '../src/orders/order.events';
-import { User } from '../src/users/user.entity';
-import { UserRole } from '../src/users/user-role.enum';
+import {
+  EVENT_PUBLISHER,
+  EventPublisher,
+} from '../src/events/application/ports/event-publisher';
+import {
+  ORDER_EVENT_TYPES,
+  OrderEvent,
+} from '../src/orders/domain/order.events';
+import { User } from '../src/users/domain/user.entity';
+import { UserRole } from '../src/users/domain/user-role.enum';
 import { Actor, registerActor } from './utils/actors';
 import { createE2eApp, resetDatabase } from './utils/e2e-app';
 

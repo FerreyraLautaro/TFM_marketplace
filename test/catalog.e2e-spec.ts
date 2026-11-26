@@ -2,10 +2,13 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { NormalizationRun } from '../src/catalog/normalization-run.entity';
-import { LLM_PROVIDER, LlmProvider } from '../src/llm/llm-provider';
-import { LlmUnavailableError } from '../src/llm/llm.errors';
-import { UserRole } from '../src/users/user-role.enum';
+import { NormalizationRun } from '../src/catalog/domain/normalization-run.entity';
+import {
+  LLM_PROVIDER,
+  LlmProvider,
+} from '../src/llm/application/ports/llm-provider';
+import { LlmUnavailableError } from '../src/llm/application/ports/llm.errors';
+import { UserRole } from '../src/users/domain/user-role.enum';
 import { Actor, registerActor } from './utils/actors';
 import { createE2eApp, resetDatabase } from './utils/e2e-app';
 
