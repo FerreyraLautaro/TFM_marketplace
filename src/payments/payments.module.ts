@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FakePaymentProvider } from './fake-payment-provider';
-import { PaymentCheckoutSimulator } from './payment-checkout-simulator';
-import { PAYMENT_PROVIDER } from './payment-provider';
-import { PaymentWebhookService } from './payment-webhook.service';
-import { Payment } from './payment.entity';
-import { PaymentsController } from './payments.controller';
+import { FakePaymentProvider } from './infrastructure/fake-payment-provider';
+import { PaymentCheckoutSimulator } from './application/payment-checkout-simulator';
+import { PAYMENT_PROVIDER } from './application/ports/payment-provider';
+import { PaymentWebhookService } from './application/payment-webhook.service';
+import { Payment } from './domain/payment.entity';
+import { PaymentsController } from './http/payments.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Payment])],

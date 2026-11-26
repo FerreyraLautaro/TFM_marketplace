@@ -1,6 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { EvaluationResult, renderRunReport } from '../src/catalog/eval/report';
+import {
+  EvaluationResult,
+  renderRunReport,
+} from '../src/catalog/application/eval/report';
 
 // Re-renders the Markdown report of stored results without calling the model again.
 const paths = process.argv.slice(2);

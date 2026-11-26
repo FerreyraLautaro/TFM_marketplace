@@ -2,12 +2,15 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { EVENT_PUBLISHER, EventPublisher } from '../src/events/event-publisher';
-import { OrderEvent } from '../src/orders/order.events';
-import { Payment } from '../src/payments/payment.entity';
-import { ProcessedWebhookEvent } from '../src/payments/processed-webhook-event.entity';
-import { signWebhookBody } from '../src/payments/webhook-signature';
-import { UserRole } from '../src/users/user-role.enum';
+import {
+  EVENT_PUBLISHER,
+  EventPublisher,
+} from '../src/events/application/ports/event-publisher';
+import { OrderEvent } from '../src/orders/domain/order.events';
+import { Payment } from '../src/payments/domain/payment.entity';
+import { ProcessedWebhookEvent } from '../src/payments/domain/processed-webhook-event.entity';
+import { signWebhookBody } from '../src/payments/infrastructure/webhook-signature';
+import { UserRole } from '../src/users/domain/user-role.enum';
 import { Actor, registerActor } from './utils/actors';
 import { createE2eApp, resetDatabase } from './utils/e2e-app';
 import { TEST_WEBHOOK_SECRET } from './utils/webhook-secret';

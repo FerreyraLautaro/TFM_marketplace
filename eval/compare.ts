@@ -1,6 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { EvaluationResult, renderComparison } from '../src/catalog/eval/report';
+import {
+  EvaluationResult,
+  renderComparison,
+} from '../src/catalog/application/eval/report';
 
 const [baselinePath, candidatePath] = process.argv.slice(2);
 if (!baselinePath || !candidatePath) {
