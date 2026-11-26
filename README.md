@@ -4,7 +4,8 @@ API REST de un marketplace multi-vendedor de supermercado, con un **normalizador
 
 - **API en producción:** https://tfmmarketplace-production.up.railway.app
 - **Documentación interactiva (Swagger):** https://tfmmarketplace-production.up.railway.app/docs
-- **Slides:** _pendiente_
+- **Demo interactiva:** https://tfmmarketplace-production.up.railway.app/demo
+- **Slides:** https://claude.ai/artifact/5ZoPmBq49Whp8i631PjMZu
 - **Video:** _pendiente_
 
 ## Descripción general
@@ -64,14 +65,20 @@ Reporte completo: [`eval/reports/comparacion-v1-vs-v2.md`](eval/reports/comparac
 
 ## Usuarios de prueba
 
-Se cargan con el seed de demo (`SEED_DEMO_DATA=true`). Las contraseñas no están en el repositorio: se configuran por variables de entorno y se informan en el formulario de entrega.
+Están cargados en producción con el seed de demo (`SEED_DEMO_DATA=true`). En una instalación local, las contraseñas se definen con `SEED_BUYER_PASSWORD` y `SEED_SELLER_PASSWORD`.
 
 | Rol | Email | Contraseña |
 |---|---|---|
-| BUYER | `comprador@example.com` | _(ver formulario de entrega)_ |
-| SELLER (comisión 10%) | `vendedor@example.com` | _(ver formulario de entrega)_ |
+| BUYER | `comprador@example.com` | `buyer1234` |
+| SELLER (comisión 10%) | `vendedor@example.com` | `seller1234` |
+| SELLER (comisión 5%) | `vendedor.mayorista@example.com` | `seller1234` |
+| SELLER (comisión 15%) | `vendedor.bebidas@example.com` | `seller1234` |
 
-También hay dos sellers más, para mostrar la división de órdenes con comisiones distintas: `vendedor.mayorista@example.com` (5%) y `vendedor.bebidas@example.com` (15%), con la misma contraseña de seller. Entre los tres sellers suman 10 productos.
+Los tres sellers suman 10 productos, para mostrar la división de órdenes con comisiones distintas.
+
+### Demo interactiva
+
+`/demo` es una página que ejecuta el flujo principal contra la API real, paso a paso: registro, login, catálogo, compra multi-seller, pago con webhook (y su reintento idempotente), avance de suborders como seller y normalización de un título con IA. Muestra cada request y su respuesta, sin tener que copiar tokens ni IDs a mano.
 
 ### Recorrido sugerido en Swagger
 
@@ -146,3 +153,7 @@ test/            Tests e2e
 ```
 
 Las abstracciones detrás de interfaces (`LlmProvider`, `PaymentProvider`, `EventPublisher`) permiten cambiar Gemini, el proveedor de pagos o el bus de eventos sin tocar la lógica de negocio. Las decisiones de diseño y su justificación están en la sección "Decisiones" de [`Plan_TFM.md`](Plan_TFM.md).
+
+## Uso de IA en el desarrollo
+
+El código y los tests se implementaron con Claude (Anthropic) como asistente de programación. El alcance, las decisiones de diseño y la revisión de cada pull request fueron propios; el registro de decisiones y las etapas del desarrollo están en [`Plan_TFM.md`](Plan_TFM.md).

@@ -1,25 +1,25 @@
-# Plan del TFM — Marketplace de supermercado
+# Plan y registro de desarrollo — Marketplace de supermercado
 
-> Plan vivo. Marcar casillas a medida que se avanza y registrar cada cierre semanal en la Bitácora.
-> Creado: 30/10/2026.
+> Documento vivo del TFM: alcance, etapas del desarrollo, decisiones de diseño y su justificación.
 
-## Reglas
+## Uso de IA en el desarrollo
 
-1. Un proyecto con cierre a la vez: este. Ideas nuevas → sección "Después del TFM".
-2. El código lo implementa Claude (IA); yo defino el alcance, tomo las decisiones de diseño y reviso y mergeo cada PR.
-3. No entra una decisión que no pueda fundamentar: cada elección queda registrada en "Decisiones".
-4. Los tests (unitarios y e2e) los escribe Claude a partir de los casos del plan.
-5. Cierre semanal: revisar contra el criterio de "terminado" y anotar en la Bitácora.
+El proyecto se desarrolló con Claude (Anthropic) como asistente de programación:
+
+- **Claude** implementó el código y los tests (unitarios y e2e) a partir de los casos definidos en este plan.
+- **El autor** definió el alcance, tomó cada decisión de diseño (registradas en [Decisiones](#decisiones)) y revisó y aprobó cada pull request.
+- Cada unidad de trabajo se entregó como una PR con sus tests, su migración (si aplicaba) y este documento actualizado.
 
 ## Alcance
 
 **Incluye:** auth con roles, productos por seller, órdenes divididas en suborders,
 máquinas de estado, comisión, eventos en memoria, autorización por recurso,
-pago con Mercado Pago sandbox + webhook idempotente, normalizador de catálogo con
-LLM, versionado y evaluación de prompts, Swagger, despliegue en Railway.
+pago asíncrono con webhook firmado e idempotente, normalizador de catálogo con
+LLM, versionado y evaluación de prompts, Swagger, demo interactiva y despliegue en Railway.
 
-**No incluye:** frontend, búsqueda, stock y reservas, envíos reales, split payment
-real de Mercado Pago, refresh tokens, panel de administración.
+**No incluye:** frontend de producto, búsqueda, stock y reservas, envíos reales,
+integración real con Mercado Pago (el proveedor de pagos es simulado), refresh tokens,
+panel de administración.
 
 ### Normalizador de catálogo
 
@@ -32,98 +32,70 @@ Ejemplo: `"LECHE SERENISIMA ENTERA 1LT"` →
 
 | Campo | Cómo se resuelve |
 |---|---|
-| Categoría | Lista cerrada de 15–20 en el prompt. Si duda → `SIN_CATEGORIA` |
+| Categoría | Lista cerrada de 18 en el prompt. Si duda → `SIN_CATEGORIA` |
 | Contenido / unidad | El LLM extrae; el código convierte a `ml`, `g`, `unidad` |
 | Marca | El LLM extrae; el código compara con `Brand`. Si no existe → `PENDIENTE_REVISION` |
-| Formato | Salida estructurada (JSON schema) + validación con DTO; fallo = error registrado |
+| Formato | Salida estructurada (JSON schema) + validación con zod; fallo = error registrado |
 
-Evaluación: golden dataset de 30–50 productos etiquetado a mano; script que mide
+Evaluación: golden dataset de 49 productos etiquetado a mano; script que mide
 precisión por campo y validez de esquema; reporte v1 vs v2.
 
 ---
 
-## Semana 1 · Base (~12 h)
+## Etapa 1 · Base
 
 - [x] Repositorio público en GitHub
-- [x] Nest + PostgreSQL en Docker + TypeORM + ConfigModule
-- [x] Esqueleto desplegado en Railway con `/health`
-  - [x] Endpoint `/health` con ping a la base (Terminus), probado 200/503
-  - [x] Deploy en Railway (Postgres + variables de entorno + health check path), `/health` responde 200 en producción
-  - [x] `NODE_ENV` validada con zod; `synchronize` pasó a `false` en todos los entornos (el esquema solo cambia por migraciones)
-- [ ] Users + auth: JWT, Passport, guards de rol, decorador `@CurrentUser()`
-  - [x] Entidad `User` mínima (`id` uuid, `email` único, `createdAt`) registrada en `entities`
-  - [x] `buildDataSourceOptions(env)` compartida entre la app y el CLI (`src/database/data-source.options.ts`)
-  - [x] **Migraciones (prerrequisito):** `data-source.ts` para el CLI (carga del `.env`), scripts `migration:generate/run/revert/show`, migración `CreateUser` probada con run/revert en local, y `migrationsRun` al arrancar (probado desde `dist`). Pendiente confirmar en Railway (extensión `uuid-ossp`)
-  - [x] Ampliar `User` (contraseña y rol) con una segunda migración
-  - [x] JWT, Passport, guards de rol y `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
-- [x] CRUD de productos por seller con DTOs y validación (lectura pública; alta, edición y baja solo por el seller dueño)
-- [x] Swagger configurado (`/docs`, Bearer auth, DTOs documentados con el plugin del CLI)
-- [x] Tests unitarios (escritos por Claude): auth, users, guard de roles y productos, 18 tests
+- [x] Nest + PostgreSQL en Docker + TypeORM + configuración validada con zod
+- [x] Esqueleto desplegado en Railway con `/health` (ping a la base con Terminus, probado 200/503)
+- [x] Migraciones de TypeORM (`synchronize: false` en todos los entornos), aplicadas al arrancar
+- [x] Users + auth: JWT, Passport, guards de rol, `@CurrentUser()` (`/auth/register`, `/auth/login`, `/auth/me`)
+- [x] CRUD de productos por seller con DTOs y validación (lectura pública; escritura solo del seller dueño)
+- [x] Swagger en `/docs` con Bearer auth
+- [x] Tests unitarios: auth, users, guard de roles y productos
 
-**Terminado cuando:** se registran usuarios con rol, un seller crea y edita sus
+**Criterio de terminado:** se registran usuarios con rol, un seller crea y edita sus
 productos con validación, hay tests unitarios y el esqueleto está desplegado.
 
-Docs de Nest: Modules, Providers, Controllers, Pipes/Validation, Database (TypeORM),
-Configuration, Authentication, Authorization, Custom decorators, Testing, OpenAPI.
-
-## Semana 2 · Núcleo del marketplace (~12 h)
+## Etapa 2 · Núcleo del marketplace
 
 - [x] Órdenes con división automática en suborders por seller (foto de nombre y precio en cada ítem)
 - [x] Máquinas de estado de Order y SubOrder (transiciones atómicas; 409 si el estado cambió)
 - [x] Comisión por suborder (porcentaje fijo por seller, 10% por defecto, copiado en la suborder)
 - [x] `EventPublisher` en memoria + eventos por cambio de estado (publicados después del commit)
-- [x] Autorización por recurso (seller solo ve y avanza sus suborders)
+- [x] Autorización por recurso (el seller solo ve y avanza sus suborders)
 - [x] Transacción al crear la orden
-- [x] Tests e2e del flujo principal con supertest (escritos por Claude): auth, productos y flujo completo de órdenes contra una base `marketplace_test` aislada
+- [x] Tests e2e del flujo principal con supertest contra una base `marketplace_test` aislada
 
-**Terminado cuando:** una orden con productos de 2 sellers se divide, cambia de
+**Criterio de terminado:** una orden con productos de 2 sellers se divide, cambia de
 estado y emite eventos, con tests e2e del flujo principal.
 
-Docs de Nest: Custom providers, Guards, Interceptors, Exception filters, Events,
-TypeORM transactions, Testing (e2e).
+## Etapa 3 · IA
 
-## Semana 3 · IA (~12 h)
-
-> **Modo de trabajo de esta semana:** más participación mía. Cada decisión de diseño (proveedor, prompt, esquema de salida, manejo de errores, costos y límites) se discute antes de implementar, y el código se revisa pensando en cómo funcionaría en un entorno real: reintentos, timeouts, cuotas de la API, costo por llamada, observabilidad y qué pasa cuando el LLM falla o devuelve algo inválido.
-
-- [x] API key de Gemini y límites confirmados en la consola (se empezó con `gemini-3.1-flash-lite`; se migró a `gemini-3.5-flash-lite`)
-- [x] `LlmProvider` + `GeminiLlmProvider` con salida estructurada (reintentos propios, timeout, limitador de ritmo)
-- [x] Taxonomía de categorías (18, con `SIN_CATEGORIA`) y semilla de 35 marcas con alias (en la migración)
+- [x] `LlmProvider` + `GeminiLlmProvider` con salida estructurada (reintentos, timeout, limitador de ritmo)
+- [x] Taxonomía de 18 categorías (con `SIN_CATEGORIA`) y 35 marcas con alias (en la migración)
 - [x] Normalizador con prompt v1 + registro en `NormalizationRun` (`POST /catalog/normalize`, solo SELLER)
-- [x] Golden dataset de 49 productos (borrador de Claude revisado fila por fila; reglas de etiquetado en el archivo)
-- [x] Script de evaluación (`npm run eval`, 2 corridas por defecto) + prompt v2 (reglas y ejemplos fuera del dataset)
-- [x] Reporte comparativo v1 vs v2 con números (`eval/reports/comparacion-v1-vs-v2.md`): todos los campos objetivos 85,4% → 97,9% sobre llamadas respondidas, tokens de entrada 271 → 688 por llamada
+- [x] Golden dataset de 49 productos con reglas de etiquetado
+- [x] Script de evaluación (`npm run eval`, 2 corridas por defecto) + prompt v2
+- [x] Reporte comparativo v1 vs v2 (`eval/reports/comparacion-v1-vs-v2.md`): todos los campos objetivos 85,4% → 97,9% sobre llamadas respondidas; tokens de entrada 271 → 688 por llamada
 
-**Terminado cuando:** existe un reporte que compara v1 y v2 por campo y el
+**Criterio de terminado:** existe un reporte que compara v1 y v2 por campo y el
 endpoint de normalización funciona.
 
-## Modo reducido · Ya en Cencosud (4–6 h/semana)
+## Etapa 4 · Pagos, despliegue y entrega
 
-- [x] ~~Mercado Pago sandbox detrás de `PaymentProvider`~~ → descartado: se mantiene `FakePaymentProvider` (decisión 2026-11-20)
-- [x] Webhook idempotente **simulado** que pasa la orden a PAID (`POST /payments/webhook` con firma HMAC; checkout simulado en `POST /payments/:reference/simulate`)
+- [x] Pago asíncrono detrás de `PaymentProvider` con `FakePaymentProvider`
+- [x] Webhook idempotente con firma HMAC que pasa la orden a `PAID` (`POST /payments/webhook`; checkout simulado en `POST /payments/:reference/simulate`)
+- [x] Seeds de demo al arrancar con `SEED_DEMO_DATA=true`: 1 BUYER, 3 SELLERS (5/10/15%) y 10 productos
 - [x] Despliegue en Railway con variables de entorno y seeds
-  - [x] Seeds de demo al arrancar con `SEED_DEMO_DATA=true`: 1 BUYER, 3 SELLERS (5/10/15%) y 10 productos; idempotente, contraseñas por variables de entorno
-- [x] README completo (faltan solo las URLs de slides y video)
-- [ ] Slides de presentación (hechas con Claude)
-- [ ] Demo interactiva: página HTML/SPA (artifact de Claude) que muestra los flujos principales y permite elegir qué respuesta llega en cada paso (éxito, 400, 403, 404, 409), como alternativa más clara que Swagger
-- [ ] Video con captura de pantalla, filmado por mí usando los endpoints (guion preparado con Claude)
-- [ ] Formulario de entrega enviado
-
-**Terminado cuando:** el formulario de entrega está enviado.
-
-### Próximos pasos (para retomar en otra sesión)
-
-1. **Demo interactiva** (artifact HTML/SPA): flujos principales (login, compra multi-seller, pago con webhook e idempotencia, avance de suborders, normalizador) con respuestas seleccionables (éxito, 400, 403, 404, 409).
-2. **Slides:** contenido desde "Decisiones", la Bitácora y la evaluación v1 vs v2 (`eval/reports/comparacion-v1-vs-v2.md`).
-3. **Guion del video:** recorrido en Swagger de producción con los usuarios del seed (ver "Recorrido sugerido" en el README).
-4. **Completar URLs** de slides y video en el README y enviar el formulario (con las contraseñas de los usuarios de prueba).
-5. Opcional si sobra tiempo: dataset reservado para validar que el prompt v2 generaliza; recuperar el spec de `HealthController`.
-
-> **Prioridad:** nunca se recorta el núcleo del marketplace ni la parte de IA. El onboarding tiene prioridad.
+- [x] README completo
+- [x] Slides de presentación
+- [ ] Demo interactiva en `/demo`: ejecuta el flujo principal contra la API real (registro, login, compra, pago, suborders, normalizador)
+- [ ] Video con captura de pantalla
+- [ ] Formulario de entrega
 
 ---
 
-## Checklist de entrega (documentación del máster)
+## Checklist de entrega
 
 **README.md**
 - [x] Descripción general
@@ -131,42 +103,37 @@ endpoint de normalización funciona.
 - [x] Instalación y ejecución
 - [x] Estructura del proyecto
 - [x] Funcionalidades principales
-- [x] Usuarios de prueba (un BUYER y un SELLER; contraseñas en el formulario, no en el repo)
-- [ ] URLs de despliegue, slides y video (despliegue listo; faltan slides y video)
+- [x] Usuarios y contraseñas de prueba
+- [ ] URLs de despliegue, slides y video (falta el video)
 
 **Otros**
 - [x] Repositorio público en GitHub
-- [x] Despliegue en Railway (recomendado)
-- [ ] Slides con URL pública o en el repo
-- [ ] Video con captura de pantalla (cámara opcional)
+- [x] Despliegue en Railway
+- [x] Slides con URL pública
+- [ ] Video con captura de pantalla
 - [ ] Formulario: nombre, email, URLs (repo, despliegue, slides, video), usuario de prueba
 
 ---
 
 ## Bitácora
 
-<!-- Una entrada por cierre semanal o hito. Formato:
-### AAAA-MM-DD · Semana N
-- Hecho:
-- Aprendido (concepto de Nest):
-- Bloqueos / dudas:
-- Próximo paso:
--->
+### Etapa 1 · Base
+- Hecho: config validada con zod, `/health` con Terminus, deploy en Railway, migraciones de TypeORM, users + auth JWT con roles, CRUD de productos por seller, Swagger en `/docs`. 18 tests unitarios.
+- Problemas resueltos: los paquetes `@nestjs/*` v12 son ESM y Jest no los cargaba (se resolvió con `@swc/jest`); `@nestjs/swagger` 12 exige Nest 12, se usa la línea 11.
 
-### 2026-11-20 · Semana 1
-- Hecho: config validada con zod, `/health` con Terminus, deploy en Railway, migraciones de TypeORM, users + auth JWT con roles, CRUD de productos por seller, Swagger en `/docs`. 18 tests unitarios (auth, users, guard de roles, productos).
-- Cambio de modo: por carga laboral, la implementación pasa a la IA y yo decido y reviso las PRs. Prioridad: entregar.
-- Bloqueos / dudas: los paquetes `@nestjs/*` v12 son ESM y Jest no los cargaba (se resolvió con `@swc/jest`); `@nestjs/swagger` 12 exige Nest 12, se usa la línea 11.
-- Próximo paso: Semana 2 (órdenes con suborders por seller).
+### Etapa 2 · Núcleo del marketplace
+- Hecho: órdenes divididas en suborders por seller con foto de precios, comisión por seller, máquinas de estado con transiciones atómicas, eventos en memoria, autorización por recurso. 115 tests unitarios y 16 e2e.
+- Problemas resueltos: el glob de migraciones fallaba en Windows por la mayúscula de la unidad (`c:` vs `C:`); se reemplazó por una lista explícita.
 
-### 2026-11-20 · Semana 2
-- Hecho: órdenes divididas en suborders por seller con foto de precios, comisión por seller, máquinas de estado con transiciones atómicas, eventos en memoria, pago simulado (`FakePaymentProvider`), autorización por recurso. 115 tests unitarios y 16 e2e.
-- Bloqueos / dudas: el glob de migraciones fallaba en Windows por la mayúscula de la unidad (`c:` vs `C:`); se reemplazó por una lista explícita.
-- Próximo paso: Semana 3 (normalizador de catálogo con Gemini).
+### Etapa 3 · IA
+- Hecho: proveedor de Gemini con salida estructurada y política de fallas, normalizador con marcas y categorías de referencia, golden dataset, evaluación y prompt v2 dirigido por errores medidos.
+- Problemas resueltos: el modelo inicial (`gemini-3.1-flash-lite`) estaba saturado durante la evaluación y tiene fecha de apagado; se migró a `gemini-3.5-flash-lite` cambiando solo configuración.
+
+### Etapa 4 · Pagos, despliegue y entrega
+- Hecho: pago asíncrono con webhook firmado e idempotente, seeds de demo, README, slides y demo interactiva.
+- Cambio de alcance: Mercado Pago sandbox se reemplazó por un proveedor simulado detrás de la misma interfaz, para priorizar el núcleo y la parte de IA.
 
 ## Decisiones
-
-<!-- Decisiones de diseño tomadas en el camino y su motivo. Sirven para el video y las slides. -->
 
 - **Validación de entorno con zod al arrancar (fail fast).** Una variable faltante o inválida frena el arranque con un mensaje claro, en vez de fallar en medio de un request.
 - **Módulos separados (`ConfigurationModule`, `DatabaseModule`, `HealthModule`).** `AppModule` solo compone; cada módulo tiene una responsabilidad.
@@ -186,7 +153,7 @@ endpoint de normalización funciona.
 - **Transiciones de estado con compare-and-set.** El UPDATE solo aplica si el estado sigue siendo el validado (`WHERE id = ? AND status = ?`); si otro request ganó, 409. Las tablas de transiciones son funciones puras testeadas par por par.
 - **La orden se bloquea al derivar su estado.** Con READ COMMITTED, dos sellers cerrando sus últimas suborders a la vez podían no verse entre sí y dejar la orden en PAID; el lock de la orden lo serializa.
 - **Eventos publicados después del commit.** Ningún suscriptor ve un cambio que después se revierte. Un handler que falla se loguea y no rompe el request.
-- **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago será otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
+- **Pago detrás de `PaymentProvider` con `FakePaymentProvider`.** Mercado Pago sería otra implementación del mismo token. El cobro va fuera de la transacción para no retener locks; si otro request cancela antes, un proveedor real necesitaría reembolsar (no implementado).
 - **Solo se aceptan suborders de órdenes pagadas.**
 - **Migraciones en lista explícita, como las entidades.** Un glob de archivos dependía de rutas (mayúsculas de unidad en Windows, `.d.ts` en `dist`); la lista funciona igual en local, tests y Railway.
 - **Modelo Flash-Lite, configurable por variable (`GEMINI_MODEL`).** La tarea es extracción de texto corto: alcanza con el modelo más rápido, barato y con más cuota. Se empezó con `gemini-3.1-flash-lite` y se migró a `gemini-3.5-flash-lite`: el anterior tiene fecha de apagado (mayo 2027), su reemplazo oficial es el 3.5, y estaba saturado durante la evaluación. La migración fue solo de configuración (`GEMINI_MODEL` y `GEMINI_RPM`), y la evaluación se corre sobre el modelo de producción.
@@ -207,14 +174,20 @@ endpoint de normalización funciona.
 - **Prompt v2 dirigido por errores medidos.** Cada regla corrige una causa observada en la v1 ("X KG" como venta por peso, quesos, galletitas, estilo de nombre). Los ejemplos no pueden ser ítems del dataset (data leakage) y un test lo garantiza.
 - **Limitación conocida:** la v2 se ajustó mirando el mismo dataset con el que se evalúa; para afirmar que generaliza haría falta un segundo dataset reservado.
 - **Costo vs precisión:** la v2 usa 2,5× tokens de entrada por llamada (reglas y ejemplos) por +12,5 pp. Con Flash-Lite y este volumen es despreciable; a escala es una decisión de negocio.
+- **Proveedor de pagos simulado en lugar de Mercado Pago sandbox.** El flujo (pago pendiente, webhook firmado, idempotencia) es el mismo que con un proveedor real; la integración real queda como otra implementación de `PaymentProvider`.
 - **Pago asíncrono confirmado por webhook.** `pay` solo crea un pago `PENDING`; la orden pasa a `PAID` cuando el proveedor confirma por webhook, como en Mercado Pago o Stripe. El checkout simulado usa exactamente el mismo camino firmado que un webhook real.
 - **Webhook firmado con HMAC sobre los bytes crudos.** Comparación en tiempo constante; sin firma válida, 401 y nada registrado. Sin esto, cualquiera podría marcar órdenes como pagadas.
 - **Idempotencia "reclamar primero".** El ID del evento se inserta con `ON CONFLICT DO NOTHING` en la misma transacción: si ya existía, es un reintento del proveedor y no cambia nada. `pay` también es idempotente (un índice único parcial impide dos pagos pendientes por orden).
 - **El webhook responde 200 aunque ignore el evento.** Un error haría que el proveedor reintente indefinidamente; el caso queda registrado con su motivo.
 - **Orden cancelada con pago aprobado → `REFUND_REQUIRED`.** Los reembolsos están fuera de alcance, pero el caso se detecta y se registra en lugar de perderse.
-- **Datos de demo al arrancar, activados por variable.** Las contraseñas de los usuarios de prueba vienen de variables de entorno: el repo es público y no puede tenerlas. El seed es idempotente (no duplica ni pisa contraseñas) y, si falla, se loguea sin tirar la app: los datos de demo no son críticos.
+- **Datos de demo al arrancar, activados por variable.** Las contraseñas de los usuarios de prueba vienen de variables de entorno. El seed es idempotente (no duplica ni pisa contraseñas) y, si falla, se loguea sin tirar la app: los datos de demo no son críticos.
 - **Tests e2e contra una base aislada (`marketplace_test`).** Se crea sola, recibe las migraciones al arrancar y se vacía entre suites; un guard aborta si la app no está conectada a esa base.
+- **Demo interactiva servida por la propia API (`/demo`).** Mismo origen que la API: no hace falta habilitar CORS y se despliega junto con la app. Ejecuta los endpoints reales, así que muestra el comportamiento verdadero y no una simulación.
 
 ## Después del TFM
 
-<!-- Ideas nuevas: se anotan acá y no se tocan hasta entregar. -->
+- Integración real con Mercado Pago como otra implementación de `PaymentProvider`, con reembolsos.
+- Dataset reservado para validar que el prompt v2 generaliza.
+- Eventos con outbox o cola para no perderlos si el proceso se cae.
+- Limitador de ritmo compartido (Redis) para varias instancias.
+- Registro concurrente con el mismo email: hoy responde 500 en vez de 409.
